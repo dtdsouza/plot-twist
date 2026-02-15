@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+
+# Nx
+.nx/cache
+.nx/workspace-data
+
+# Build outputs
+dist
+
+# Next.js
+.next
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Coverage
+coverage
+
+# Misc
+tmp
