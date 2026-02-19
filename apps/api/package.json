@@ -78,15 +78,23 @@
       }
     }
   },
+  "scripts": {
+    "typeorm": "typeorm-ts-node-commonjs -d ./src/data-source.ts"
+  },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "pg": "^8.18.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "typeorm": "^0.3.28"
   },
   "devDependencies": {
-    "@nestjs/testing": "^11.0.0"
+    "@nestjs/testing": "^11.0.0",
+    "@types/node": "20.19.9",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.9.3"
   }
 }
