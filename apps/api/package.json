@@ -75,6 +75,26 @@
             "buildTarget": "api:build:production"
           }
         }
+      },
+      "test": {
+        "executor": "@nx/jest:jest",
+        "outputs": ["{workspaceRoot}/coverage/apps/api"],
+        "options": {
+          "jestConfig": "apps/api/jest.config.js",
+          "testPathPattern": ["spec\\.ts$"]
+        },
+        "configurations": {
+          "unit": {
+            "testPathPattern": ["\\.spec\\.ts$"],
+            "coverageReporters": ["text", "lcov"]
+          },
+          "int": {
+            "testPathPattern": ["\\.int-spec\\.ts$"]
+          },
+          "e2e": {
+            "testPathPattern": ["\\.e2e-spec\\.ts$"]
+          }
+        }
       }
     }
   },
@@ -84,7 +104,12 @@
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
     "pg": "^8.18.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
@@ -93,7 +118,10 @@
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "20.19.9",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3"
   }

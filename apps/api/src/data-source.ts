@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
+import { UserEntity } from "./identity/persistence/entity/user.entity";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -10,7 +11,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME ?? "plot-twist",
   synchronize: process.env.DB_SYNCHRONIZE === "true",
   logging: process.env.DB_LOGGING === "true",
-  entities: [],
-  migrations: [],
+  entities: [UserEntity],
+  migrations: ["src/identity/migrations/*.ts"],
   subscribers: [],
 });

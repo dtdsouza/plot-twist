@@ -29,6 +29,7 @@ services:
       DB_NAME: plot-twist
       DB_SYNCHRONIZE: "false"
       DB_LOGGING: "false"
+      JWT_SECRET: "plot-twist-dev-jwt-secret-change-in-production"
     depends_on:
       postgres:
         condition: service_healthy
