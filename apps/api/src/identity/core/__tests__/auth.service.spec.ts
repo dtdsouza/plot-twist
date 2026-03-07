@@ -5,9 +5,9 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common'
 import { AuthService } from '../auth.service'
 import { UserEntity } from '../../persistence/entity/user.entity'
 import { EUserStatus } from '../../persistence/enum/user-status.enum'
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcryptjs'
 
-jest.mock('bcrypt')
+jest.mock('bcryptjs')
 
 const mockBcrypt = bcrypt as jest.Mocked<typeof bcrypt>
 

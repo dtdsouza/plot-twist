@@ -1,0 +1,14 @@
+{
+  "name": "web",
+  "targets": {
+    "build": {
+      "options": {
+        "command": "next build",
+        "cwd": "apps/web",
+        "env": {
+          "NODE_ENV": "production"
+        }
+      }
+    }
+  }
+}
