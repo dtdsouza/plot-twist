@@ -1,0 +1,37 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(249, 245, 236, 0.8);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  color: var(--color-dark-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.text {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--color-muted-green);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}

@@ -1,3 +1,15 @@
+:root {
+  --color-dark-green: #2C3631;
+  --color-cream: #F9F5EC;
+  --color-terracotta: #A85A48;
+  --color-muted-green: #78807C;
+  --color-border: #D8D1C2;
+  --color-overlay-text: rgba(235, 230, 217, 0.8);
+  --color-error: #C0392B;
+  --font-heading: 'Young Serif', serif;
+  --font-body: 'Newsreader', serif;
+  --font-label: 'Karla', sans-serif;
+}
 
     html {
       -webkit-text-size-adjust: 100%;
