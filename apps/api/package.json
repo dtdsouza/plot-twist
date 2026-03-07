@@ -76,6 +76,13 @@
           }
         }
       },
+      "typecheck": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "tsc -b tsconfig.app.json",
+          "cwd": "apps/api"
+        }
+      },
       "test": {
         "executor": "@nx/jest:jest",
         "outputs": [
@@ -132,10 +139,12 @@
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
     "@types/bcryptjs": "^3.0.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "20.19.9",
     "@types/supertest": "^6.0.3",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "web": "^0.0.2"
   }
 }
