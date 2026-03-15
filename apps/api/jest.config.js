@@ -10,10 +10,14 @@ module.exports = {
   coverageDirectory: '../../coverage/apps/api',
   collectCoverageFrom: [
     'src/identity/**/*.ts',
+    'src/infra/config/**/*.ts',
     '!src/identity/**/index.ts',
+    '!src/infra/config/**/index.ts',
     '!src/identity/**/*.module.ts',
+    '!src/infra/config/**/*.module.ts',
     '!src/identity/**/migrations/**',
     '!src/identity/**/__tests__/**',
+    '!src/infra/config/**/__tests__/**',
   ],
   coverageThreshold: {
     global: {
