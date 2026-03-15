@@ -5,7 +5,6 @@ import { ConfigModule } from '../../infra/config'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { IdentityModule } from '../identity/identity.module'
-import { UserEntity } from '../identity/persistence/entity/user.entity'
 import { type IDatabaseConfig } from '../../infra/config'
 
 @Module({
@@ -25,7 +24,7 @@ import { type IDatabaseConfig } from '../../infra/config'
           database: db.database,
           synchronize: db.synchronize,
           logging: db.logging,
-          entities: [UserEntity],
+          autoLoadEntities: true,
         }
       },
     }),
