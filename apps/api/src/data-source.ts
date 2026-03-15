@@ -1,12 +1,12 @@
-import 'reflect-metadata'
-import { DataSource } from 'typeorm'
-import { envSchema } from './infra/config/env.schema'
-import { UserEntity } from './module/identity/persistence/entity/user.entity'
+import "reflect-metadata";
+import { DataSource } from "typeorm";
+import { envSchema } from "./infra/config/env.schema";
+import { UserEntity } from "./module/identity/persistence/entity/user.entity";
 
-const env = envSchema.parse(process.env)
+const env = envSchema.parse(process.env);
 
 export const AppDataSource = new DataSource({
-  type: 'postgres',
+  type: "postgres",
   host: env.DB_HOST,
   port: env.DB_PORT,
   username: env.DB_USERNAME,
@@ -15,6 +15,6 @@ export const AppDataSource = new DataSource({
   synchronize: env.DB_SYNCHRONIZE,
   logging: env.DB_LOGGING,
   entities: [UserEntity],
-  migrations: ['src/module/identity/migrations/*.ts'],
+  migrations: ["src/module/identity/migrations/*.ts"],
   subscribers: [],
-})
+});
