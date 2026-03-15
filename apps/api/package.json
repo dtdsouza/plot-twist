@@ -83,6 +83,13 @@
           "cwd": "apps/api"
         }
       },
+      "lint:arch": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "depcruise src --config .dependency-cruiser.cjs --output-type text",
+          "cwd": "apps/api"
+        }
+      },
       "test": {
         "executor": "@nx/jest:jest",
         "outputs": [
@@ -119,7 +126,8 @@
     }
   },
   "scripts": {
-    "typeorm": "typeorm-ts-node-commonjs -d ./src/data-source.ts"
+    "typeorm": "typeorm-ts-node-commonjs -d ./src/data-source.ts",
+    "lint:arch": "depcruise src --config .dependency-cruiser.cjs --output-type text"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
