@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { envSchema } from "./infra/config/env.schema";
 import { UserEntity } from "./module/identity/persistence/entity/user.entity";
+import { PasswordResetTokenEntity } from "./module/identity/persistence/entity/password-reset-token.entity";
 
 const env = envSchema.parse(process.env);
 
@@ -14,7 +15,7 @@ export const AppDataSource = new DataSource({
   database: env.DB_NAME,
   synchronize: env.DB_SYNCHRONIZE,
   logging: env.DB_LOGGING,
-  entities: [UserEntity],
+  entities: [UserEntity, PasswordResetTokenEntity],
   migrations: ["src/module/identity/migrations/*.ts"],
   subscribers: [],
 });

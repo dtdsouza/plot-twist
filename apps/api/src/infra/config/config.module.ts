@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule as NestConfigModule } from "@nestjs/config";
 import { envSchema } from "./env.schema";
-import { appConfig, databaseConfig, jwtConfig } from "./segment";
+import { appConfig, databaseConfig, jwtConfig, mailConfig } from "./segment";
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { appConfig, databaseConfig, jwtConfig } from "./segment";
 
         return result.data;
       },
-      load: [appConfig, databaseConfig, jwtConfig],
+      load: [appConfig, databaseConfig, jwtConfig, mailConfig],
     }),
   ],
 })

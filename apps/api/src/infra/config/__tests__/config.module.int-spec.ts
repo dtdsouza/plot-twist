@@ -19,6 +19,7 @@ describe('ConfigModule', () => {
       DB_LOGGING: 'false',
       JWT_SECRET: 'test-secret-long-enough-for-validation',
       JWT_EXPIRES_IN: '7d',
+      RESEND_API_KEY: 're_test_placeholder',
     }
   })
 

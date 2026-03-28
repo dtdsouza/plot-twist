@@ -5,11 +5,13 @@ import { ConfigService } from '@nestjs/config'
 import { AuthController } from './http/controller/auth.controller'
 import { AuthService } from './core/auth.service'
 import { UserEntity } from './persistence/entity/user.entity'
+import { PasswordResetTokenEntity } from './persistence/entity/password-reset-token.entity'
 import { type IJwtConfig } from '../../infra/config'
+import { MailModule } from '../../infra/mail'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([UserEntity, PasswordResetTokenEntity]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
@@ -21,6 +23,7 @@ import { type IJwtConfig } from '../../infra/config'
         }
       },
     }),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

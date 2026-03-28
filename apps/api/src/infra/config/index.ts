@@ -11,4 +11,7 @@ export {
   jwtConfig,
   JWT_CONFIG_KEY,
   type IJwtConfig,
+  mailConfig,
+  MAIL_CONFIG_KEY,
+  type IMailConfig,
 } from './segment'
