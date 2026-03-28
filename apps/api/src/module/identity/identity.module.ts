@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { JwtModule } from '@nestjs/jwt'
+import { JwtModule, type JwtModuleOptions } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { AuthController } from './http/controller/auth.controller'
 import { AuthService } from './core/auth.service'
@@ -20,7 +20,7 @@ import { MailModule } from '../../infra/mail'
         return {
           secret: jwt.secret,
           signOptions: { expiresIn: jwt.expiresIn },
-        }
+        } as JwtModuleOptions
       },
     }),
     MailModule,

@@ -96,14 +96,11 @@
           "{workspaceRoot}/coverage/apps/api"
         ],
         "options": {
-          "jestConfig": "apps/api/jest.config.js",
-          "testPathPattern": [
-            "spec\\.ts$"
-          ]
+          "jestConfig": "apps/api/jest.config.js"
         },
         "configurations": {
           "unit": {
-            "testPathPattern": [
+            "testPathPatterns": [
               "\\.spec\\.ts$"
             ],
             "coverageReporters": [
@@ -112,12 +109,12 @@
             ]
           },
           "int": {
-            "testPathPattern": [
+            "testPathPatterns": [
               "\\.int-spec\\.ts$"
             ]
           },
           "e2e": {
-            "testPathPattern": [
+            "testPathPatterns": [
               "\\.e2e-spec\\.ts$"
             ]
           }
