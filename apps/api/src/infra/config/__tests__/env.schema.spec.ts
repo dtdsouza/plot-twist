@@ -13,6 +13,9 @@ describe('envSchema', () => {
     DB_LOGGING: 'false',
     JWT_SECRET: 'a-secret-that-is-long-enough',
     JWT_EXPIRES_IN: '7d',
+    RESEND_API_KEY: 're_test_api_key',
+    RESEND_FROM_ADDRESS: 'Plot-Twist <onboarding@resend.dev>',
+    PASSWORD_RESET_URL: 'http://localhost:4200/reset-password',
   }
 
   it('should parse a fully valid env', () => {
@@ -26,10 +29,16 @@ describe('envSchema', () => {
     expect(result.DB_LOGGING).toBe(false)
     expect(result.JWT_SECRET).toBe('a-secret-that-is-long-enough')
     expect(result.JWT_EXPIRES_IN).toBe('7d')
+    expect(result.RESEND_API_KEY).toBe('re_test_api_key')
+    expect(result.RESEND_FROM_ADDRESS).toBe('Plot-Twist <onboarding@resend.dev>')
+    expect(result.PASSWORD_RESET_URL).toBe('http://localhost:4200/reset-password')
   })
 
   it('should apply defaults when optional fields are omitted', () => {
-    const minimal = { JWT_SECRET: 'a-secret-that-is-long-enough' }
+    const minimal = {
+      JWT_SECRET: 'a-secret-that-is-long-enough',
+      RESEND_API_KEY: 're_test_api_key',
+    }
 
     const result = envSchema.parse(minimal)
 
@@ -43,6 +52,9 @@ describe('envSchema', () => {
     expect(result.DB_SYNCHRONIZE).toBe(false)
     expect(result.DB_LOGGING).toBe(false)
     expect(result.JWT_EXPIRES_IN).toBe('7d')
+    expect(result.RESEND_API_KEY).toBe('re_test_api_key')
+    expect(result.RESEND_FROM_ADDRESS).toBe('Plot-Twist <onboarding@resend.dev>')
+    expect(result.PASSWORD_RESET_URL).toBe('http://localhost:4200/reset-password')
   })
 
   it('should reject missing JWT_SECRET', () => {

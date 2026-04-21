@@ -22,4 +22,8 @@ export const envSchema = z.object({
 
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().min(1).default('7d'),
+
+  RESEND_API_KEY: z.string().min(1),
+  RESEND_FROM_ADDRESS: z.string().min(1).default('Plot-Twist <onboarding@resend.dev>'),
+  PASSWORD_RESET_URL: z.string().url().default('http://localhost:4200/reset-password'),
 })

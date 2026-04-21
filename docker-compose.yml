@@ -30,6 +30,9 @@ services:
       DB_SYNCHRONIZE: "false"
       DB_LOGGING: "false"
       JWT_SECRET: "plot-twist-dev-jwt-secret-change-in-production"
+      RESEND_API_KEY: "re_test_placeholder"
+      RESEND_FROM_ADDRESS: "Plot-Twist <onboarding@resend.dev>"
+      PASSWORD_RESET_URL: "http://localhost:4200/reset-password"
     depends_on:
       postgres:
         condition: service_healthy
