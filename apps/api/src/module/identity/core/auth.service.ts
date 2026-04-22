@@ -6,14 +6,15 @@ import {
   Inject,
   Logger,
 } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource, MoreThan } from 'typeorm'
+import { DataSource } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import * as bcrypt from 'bcryptjs'
 import * as crypto from 'node:crypto'
 import { UserEntity } from '../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../persistence/entity/password-reset-token.entity'
+import { UserRepository } from '../persistence/repository/user.repository'
+import { PasswordResetTokenRepository } from '../persistence/repository/password-reset-token.repository'
 import { EUserStatus } from '../persistence/enum/user-status.enum'
 import { RegisterDto } from '../http/dto/register.dto'
 import { LoginDto } from '../http/dto/login.dto'
@@ -30,10 +31,8 @@ export class AuthService {
   private readonly passwordResetUrl: string
 
   constructor(
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
-    @InjectRepository(PasswordResetTokenEntity)
-    private readonly tokenRepository: Repository<PasswordResetTokenEntity>,
+    private readonly userRepository: UserRepository,
+    private readonly tokenRepository: PasswordResetTokenRepository,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
     @Inject(EMAIL_SERVICE)
@@ -45,9 +44,7 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<IAuthResponse> {
-    const existingUser = await this.userRepository.findOne({
-      where: { email: dto.email },
-    })
+    const existingUser = await this.userRepository.findOne({ email: dto.email })
 
     if (existingUser) {
       throw new ConflictException('A user with this email already exists')
@@ -55,13 +52,11 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS)
 
-    const entity = this.userRepository.create({
+    const savedUser = await this.userRepository.create({
       email: dto.email,
       passwordHash,
       displayName: dto.displayName,
     })
-
-    const savedUser = await this.userRepository.save(entity)
 
     this.logger.log(`User registered: ${savedUser.id}`)
 
@@ -69,9 +64,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<IAuthResponse> {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email },
-    })
+    const user = await this.userRepository.findOne({ email: dto.email })
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')
@@ -89,9 +82,7 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: { email },
-    })
+    const user = await this.userRepository.findOne({ email })
 
     if (!user || user.status !== EUserStatus.ACTIVE) {
       this.logger.log('Password reset requested for non-existent or inactive email')
@@ -99,7 +90,7 @@ export class AuthService {
     }
 
     // Invalidate all previous tokens for this user
-    await this.tokenRepository.delete({ userId: user.id })
+    await this.tokenRepository.deleteAllForUser(user.id)
 
     // Generate cryptographically secure token
     const rawToken = crypto.randomBytes(32).toString('hex')
@@ -110,15 +101,13 @@ export class AuthService {
 
     const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MS)
 
-    const tokenEntity = this.tokenRepository.create({
+    await this.tokenRepository.create({
       tokenHash,
       userId: user.id,
       expiresAt,
     })
 
-    await this.tokenRepository.save(tokenEntity)
-
-    // Send reset email — failures are logged but do not propagate
+    // Send reset email -- failures are logged but do not propagate
     const resetUrl = `${this.passwordResetUrl}?token=${rawToken}`
 
     try {
@@ -141,21 +130,14 @@ export class AuthService {
       .update(token)
       .digest('hex')
 
-    const tokenEntity = await this.tokenRepository.findOne({
-      where: {
-        tokenHash,
-        expiresAt: MoreThan(new Date()),
-      },
-    })
+    const tokenEntity = await this.tokenRepository.findValidByTokenHash(tokenHash)
 
     if (!tokenEntity) {
       this.logger.warn('Password reset attempted with invalid or expired token')
       throw new BadRequestException('Invalid or expired reset token')
     }
 
-    const user = await this.userRepository.findOne({
-      where: { id: tokenEntity.userId },
-    })
+    const user = await this.userRepository.findOne({ id: tokenEntity.userId })
 
     if (!user || user.status !== EUserStatus.ACTIVE) {
       this.logger.warn('Password reset attempted for inactive user')

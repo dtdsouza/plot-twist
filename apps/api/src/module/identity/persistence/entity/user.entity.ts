@@ -1,17 +1,9 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from "typeorm";
+import { Entity, Column } from "typeorm";
 import { EUserStatus } from "../enum/user-status.enum";
+import { BaseEntity } from "../../../../infra/typeorm";
 
 @Entity({ schema: "identity", name: "user" })
-export class UserEntity {
-  @PrimaryGeneratedColumn("uuid")
-  id!: string;
-
+export class UserEntity extends BaseEntity {
   @Column({ type: "varchar", length: 255, unique: true })
   email!: string;
 
@@ -33,10 +25,4 @@ export class UserEntity {
     default: EUserStatus.ACTIVE,
   })
   status!: EUserStatus;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

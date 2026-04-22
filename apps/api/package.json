@@ -123,7 +123,13 @@
     }
   },
   "scripts": {
-    "typeorm": "typeorm-ts-node-commonjs -d ./src/data-source.ts",
+    "typeorm": "TS_NODE_PROJECT=tsconfig.cli.json typeorm-ts-node-commonjs -d ./src/data-source.ts",
+    "migration:generate": "sh scripts/migration.sh generate",
+    "migration:create": "sh scripts/migration.sh create",
+    "migration:run": "pnpm typeorm migration:run",
+    "migration:revert": "pnpm typeorm migration:revert",
+    "migration:show": "pnpm typeorm migration:show",
+    "db:drop": "pnpm typeorm schema:drop",
     "lint:arch": "depcruise src --config .dependency-cruiser.cjs --output-type text"
   },
   "dependencies": {
@@ -152,6 +158,7 @@
     "@types/node": "20.19.9",
     "@types/pg": "^8.18.0",
     "@types/supertest": "^6.0.3",
+    "dotenv": "^17.4.2",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
