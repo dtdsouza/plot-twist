@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import {
@@ -11,6 +10,8 @@ import { DataSource } from 'typeorm'
 import { AuthService } from '../auth.service'
 import { UserEntity } from '../../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../../persistence/entity/password-reset-token.entity'
+import { UserRepository } from '../../persistence/repository/user.repository'
+import { PasswordResetTokenRepository } from '../../persistence/repository/password-reset-token.repository'
 import { EUserStatus } from '../../persistence/enum/user-status.enum'
 import { EMAIL_SERVICE } from '../../../../infra/mail/interface/email-service.interface'
 import * as bcrypt from 'bcryptjs'
@@ -33,14 +34,15 @@ describe('AuthService', () => {
   let service: AuthService
   let mockUserRepository: {
     findOne: jest.Mock
+    findMany: jest.Mock
     create: jest.Mock
-    save: jest.Mock
+    update: jest.Mock
+    delete: jest.Mock
   }
   let mockTokenRepository: {
-    findOne: jest.Mock
+    findValidByTokenHash: jest.Mock
     create: jest.Mock
-    save: jest.Mock
-    delete: jest.Mock
+    deleteAllForUser: jest.Mock
   }
   let mockJwtService: {
     sign: jest.Mock
@@ -70,15 +72,16 @@ describe('AuthService', () => {
   beforeEach(async () => {
     mockUserRepository = {
       findOne: jest.fn(),
+      findMany: jest.fn(),
       create: jest.fn(),
-      save: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
     }
 
     mockTokenRepository = {
-      findOne: jest.fn(),
+      findValidByTokenHash: jest.fn(),
       create: jest.fn(),
-      save: jest.fn(),
-      delete: jest.fn(),
+      deleteAllForUser: jest.fn(),
     }
 
     mockJwtService = {
@@ -102,8 +105,8 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: getRepositoryToken(UserEntity), useValue: mockUserRepository },
-        { provide: getRepositoryToken(PasswordResetTokenEntity), useValue: mockTokenRepository },
+        { provide: UserRepository, useValue: mockUserRepository },
+        { provide: PasswordResetTokenRepository, useValue: mockTokenRepository },
         { provide: JwtService, useValue: mockJwtService },
         { provide: DataSource, useValue: mockDataSource },
         { provide: EMAIL_SERVICE, useValue: mockEmailService },
@@ -139,8 +142,7 @@ describe('AuthService', () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(null)
       mockBcrypt.hash.mockResolvedValue('hashed-password' as never)
-      mockUserRepository.create.mockReturnValue(mockUser)
-      mockUserRepository.save.mockResolvedValue(mockUser)
+      mockUserRepository.create.mockResolvedValue(mockUser)
 
       // Act
       const result = await service.register(registerDto)
@@ -163,8 +165,7 @@ describe('AuthService', () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(null)
       mockBcrypt.hash.mockResolvedValue('hashed-password' as never)
-      mockUserRepository.create.mockReturnValue(mockUser)
-      mockUserRepository.save.mockResolvedValue(mockUser)
+      mockUserRepository.create.mockResolvedValue(mockUser)
 
       // Act
       await service.register(registerDto)
@@ -187,8 +188,7 @@ describe('AuthService', () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(null)
       mockBcrypt.hash.mockResolvedValue('hashed-password' as never)
-      mockUserRepository.create.mockReturnValue(mockUser)
-      mockUserRepository.save.mockResolvedValue(mockUser)
+      mockUserRepository.create.mockResolvedValue(mockUser)
 
       // Act
       const result = await service.register(registerDto)
@@ -201,8 +201,7 @@ describe('AuthService', () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(null)
       mockBcrypt.hash.mockResolvedValue('hashed-password' as never)
-      mockUserRepository.create.mockReturnValue(mockUser)
-      mockUserRepository.save.mockResolvedValue(mockUser)
+      mockUserRepository.create.mockResolvedValue(mockUser)
 
       // Act
       await service.register(registerDto)
@@ -315,12 +314,11 @@ describe('AuthService', () => {
     it('should generate token, store hash, and send email for active user', async () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(mockUser)
-      mockTokenRepository.create.mockReturnValue({
+      mockTokenRepository.create.mockResolvedValue({
         tokenHash: 'hashed-token-hex',
         userId: mockUser.id,
         expiresAt: expect.any(Date),
       })
-      mockTokenRepository.save.mockResolvedValue({})
 
       // Act
       await service.forgotPassword(mockUser.email)
@@ -328,8 +326,8 @@ describe('AuthService', () => {
       // Assert
       expect(mockCrypto.randomBytes).toHaveBeenCalledWith(32)
       expect(mockCrypto.createHash).toHaveBeenCalledWith('sha256')
-      expect(mockTokenRepository.delete).toHaveBeenCalledWith({ userId: mockUser.id })
-      expect(mockTokenRepository.save).toHaveBeenCalled()
+      expect(mockTokenRepository.deleteAllForUser).toHaveBeenCalledWith(mockUser.id)
+      expect(mockTokenRepository.create).toHaveBeenCalled()
       expect(mockEmailService.send).toHaveBeenCalledWith(
         expect.objectContaining({
           to: mockUser.email,
@@ -344,7 +342,7 @@ describe('AuthService', () => {
 
       // Act & Assert
       await expect(service.forgotPassword('unknown@example.com')).resolves.toBeUndefined()
-      expect(mockTokenRepository.save).not.toHaveBeenCalled()
+      expect(mockTokenRepository.create).not.toHaveBeenCalled()
       expect(mockEmailService.send).not.toHaveBeenCalled()
     })
 
@@ -357,7 +355,7 @@ describe('AuthService', () => {
       await service.forgotPassword(inactiveUser.email)
 
       // Assert
-      expect(mockTokenRepository.save).not.toHaveBeenCalled()
+      expect(mockTokenRepository.create).not.toHaveBeenCalled()
       expect(mockEmailService.send).not.toHaveBeenCalled()
     })
 
@@ -370,22 +368,20 @@ describe('AuthService', () => {
       await service.forgotPassword(suspendedUser.email)
 
       // Assert
-      expect(mockTokenRepository.save).not.toHaveBeenCalled()
+      expect(mockTokenRepository.create).not.toHaveBeenCalled()
       expect(mockEmailService.send).not.toHaveBeenCalled()
     })
 
     it('should invalidate previous tokens before creating new one', async () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(mockUser)
-      mockTokenRepository.create.mockReturnValue({})
-      mockTokenRepository.save.mockResolvedValue({})
       const callOrder: string[] = []
-      mockTokenRepository.delete.mockImplementation(() => {
-        callOrder.push('delete')
-        return Promise.resolve({})
+      mockTokenRepository.deleteAllForUser.mockImplementation(() => {
+        callOrder.push('deleteAllForUser')
+        return Promise.resolve()
       })
-      mockTokenRepository.save.mockImplementation(() => {
-        callOrder.push('save')
+      mockTokenRepository.create.mockImplementation(() => {
+        callOrder.push('create')
         return Promise.resolve({})
       })
 
@@ -393,14 +389,13 @@ describe('AuthService', () => {
       await service.forgotPassword(mockUser.email)
 
       // Assert
-      expect(callOrder).toEqual(['delete', 'save'])
+      expect(callOrder).toEqual(['deleteAllForUser', 'create'])
     })
 
     it('should store hashed token, not raw token', async () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(mockUser)
-      mockTokenRepository.create.mockReturnValue({})
-      mockTokenRepository.save.mockResolvedValue({})
+      mockTokenRepository.create.mockResolvedValue({})
 
       // Act
       await service.forgotPassword(mockUser.email)
@@ -416,20 +411,18 @@ describe('AuthService', () => {
     it('should log and continue if email sending fails', async () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(mockUser)
-      mockTokenRepository.create.mockReturnValue({})
-      mockTokenRepository.save.mockResolvedValue({})
+      mockTokenRepository.create.mockResolvedValue({})
       mockEmailService.send.mockRejectedValue(new Error('Email send failed'))
 
-      // Act & Assert — should not throw
+      // Act & Assert -- should not throw
       await expect(service.forgotPassword(mockUser.email)).resolves.toBeUndefined()
-      expect(mockTokenRepository.save).toHaveBeenCalled()
+      expect(mockTokenRepository.create).toHaveBeenCalled()
     })
 
     it('should include reset URL with raw token in email', async () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(mockUser)
-      mockTokenRepository.create.mockReturnValue({})
-      mockTokenRepository.save.mockResolvedValue({})
+      mockTokenRepository.create.mockResolvedValue({})
       mockCrypto.randomBytes.mockReturnValue(Buffer.from('abcdef1234567890abcdef1234567890') as never)
 
       // Act
@@ -453,7 +446,7 @@ describe('AuthService', () => {
 
     it('should update password and delete token for valid token', async () => {
       // Arrange
-      mockTokenRepository.findOne.mockResolvedValue(mockTokenEntity)
+      mockTokenRepository.findValidByTokenHash.mockResolvedValue(mockTokenEntity)
       mockUserRepository.findOne.mockResolvedValue(mockUser)
       mockBcrypt.hash.mockResolvedValue('new-hashed-password' as never)
       mockDataSource.transaction.mockImplementation(async (cb: Function) => {
@@ -483,7 +476,7 @@ describe('AuthService', () => {
 
     it('should throw BadRequestException for expired token', async () => {
       // Arrange
-      mockTokenRepository.findOne.mockResolvedValue(null)
+      mockTokenRepository.findValidByTokenHash.mockResolvedValue(null)
 
       // Act & Assert
       await expect(
@@ -493,7 +486,7 @@ describe('AuthService', () => {
 
     it('should throw BadRequestException for non-existent token', async () => {
       // Arrange
-      mockTokenRepository.findOne.mockResolvedValue(null)
+      mockTokenRepository.findValidByTokenHash.mockResolvedValue(null)
 
       // Act & Assert
       await expect(
@@ -504,7 +497,7 @@ describe('AuthService', () => {
     it('should throw BadRequestException for INACTIVE user with valid token', async () => {
       // Arrange
       const inactiveUser = { ...mockUser, status: EUserStatus.INACTIVE }
-      mockTokenRepository.findOne.mockResolvedValue(mockTokenEntity)
+      mockTokenRepository.findValidByTokenHash.mockResolvedValue(mockTokenEntity)
       mockUserRepository.findOne.mockResolvedValue(inactiveUser)
 
       // Act & Assert
@@ -516,7 +509,7 @@ describe('AuthService', () => {
     it('should throw BadRequestException for SUSPENDED user with valid token', async () => {
       // Arrange
       const suspendedUser = { ...mockUser, status: EUserStatus.SUSPENDED }
-      mockTokenRepository.findOne.mockResolvedValue(mockTokenEntity)
+      mockTokenRepository.findValidByTokenHash.mockResolvedValue(mockTokenEntity)
       mockUserRepository.findOne.mockResolvedValue(suspendedUser)
 
       // Act & Assert
@@ -527,7 +520,7 @@ describe('AuthService', () => {
 
     it('should hash the incoming token with SHA-256 before lookup', async () => {
       // Arrange
-      mockTokenRepository.findOne.mockResolvedValue(null)
+      mockTokenRepository.findValidByTokenHash.mockResolvedValue(null)
 
       // Act
       try {
@@ -543,7 +536,7 @@ describe('AuthService', () => {
 
     it('should wrap password update and token deletion in a transaction', async () => {
       // Arrange
-      mockTokenRepository.findOne.mockResolvedValue(mockTokenEntity)
+      mockTokenRepository.findValidByTokenHash.mockResolvedValue(mockTokenEntity)
       mockUserRepository.findOne.mockResolvedValue(mockUser)
       mockBcrypt.hash.mockResolvedValue('new-hashed-password' as never)
       mockDataSource.transaction.mockImplementation(async (cb: Function) => {

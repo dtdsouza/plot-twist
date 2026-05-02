@@ -14,6 +14,8 @@ import * as crypto from 'node:crypto'
 import { AuthService } from '../auth.service'
 import { UserEntity } from '../../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../../persistence/entity/password-reset-token.entity'
+import { UserRepository } from '../../persistence/repository/user.repository'
+import { PasswordResetTokenRepository } from '../../persistence/repository/password-reset-token.repository'
 import { EMAIL_SERVICE } from '../../../../infra/mail/interface/email-service.interface'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
@@ -69,6 +71,8 @@ describe('AuthService (integration)', () => {
       ],
       providers: [
         AuthService,
+        UserRepository,
+        PasswordResetTokenRepository,
         { provide: EMAIL_SERVICE, useValue: mockEmailService },
         { provide: ConfigService, useValue: mockConfigService },
       ],

@@ -25,11 +25,15 @@ plot-twist/
 ├── apps/
 │   ├── api/                          # NestJS backend
 │   │   └── src/
-│   │       ├── data-source.ts        # TypeORM data source config
+│   │       ├── data-source.ts        # TypeORM data source config (CLI entrypoint)
 │   │       ├── main.ts
 │   │       ├── infra/                # Cross-cutting infrastructure
 │   │       │   ├── config/           # Centralized env config (Zod-validated)
-│   │       │   └── mail/             # Resend email service
+│   │       │   ├── mail/             # Resend email service
+│   │       │   └── typeorm/          # BaseEntity, BaseRepository, TypeormPersistenceModule
+│   │       ├── persistence/          # App-level persistence aggregator
+│   │       │   ├── data-source.options.ts  # Shared DataSourceOptions builder (CLI + runtime)
+│   │       │   └── persistence.module.ts   # Aggregates persistence providers for migrations/DI
 │   │       └── module/               # Domain modules
 │   │           ├── app/              # Root app module
 │   │           └── identity/         # Auth, users, password reset

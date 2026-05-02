@@ -11,6 +11,8 @@ import { AuthController } from '../auth.controller'
 import { AuthService } from '../../../core/auth.service'
 import { UserEntity } from '../../../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../../../persistence/entity/password-reset-token.entity'
+import { UserRepository } from '../../../persistence/repository/user.repository'
+import { PasswordResetTokenRepository } from '../../../persistence/repository/password-reset-token.repository'
 import { EUserStatus } from '../../../persistence/enum/user-status.enum'
 import { EMAIL_SERVICE } from '../../../../../infra/mail/interface/email-service.interface'
 
@@ -67,6 +69,8 @@ describe('AuthController (e2e)', () => {
       controllers: [AuthController],
       providers: [
         AuthService,
+        UserRepository,
+        PasswordResetTokenRepository,
         { provide: EMAIL_SERVICE, useValue: mockEmailService },
         { provide: ConfigService, useValue: mockConfigService },
       ],

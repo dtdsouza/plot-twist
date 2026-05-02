@@ -6,6 +6,8 @@ import { AuthController } from './http/controller/auth.controller'
 import { AuthService } from './core/auth.service'
 import { UserEntity } from './persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from './persistence/entity/password-reset-token.entity'
+import { UserRepository } from './persistence/repository/user.repository'
+import { PasswordResetTokenRepository } from './persistence/repository/password-reset-token.repository'
 import { type IJwtConfig } from '../../infra/config'
 import { MailModule } from '../../infra/mail'
 
@@ -26,7 +28,7 @@ import { MailModule } from '../../infra/mail'
     MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, UserRepository, PasswordResetTokenRepository],
   exports: [AuthService],
 })
 export class IdentityModule {}
