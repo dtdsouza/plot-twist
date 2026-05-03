@@ -84,7 +84,9 @@ export function LoginForm() {
 
       <div className={styles.footer}>
         <div className={styles.footerLinks}>
-          <span className={styles.link}>Forgot password?</span>
+          <Link href="/forgot-password" className={styles.link}>
+            Forgot password?
+          </Link>
           <span className={styles.separator}>|</span>
           <Link href="/register" className={styles.link}>
             Request a library card (Sign up)

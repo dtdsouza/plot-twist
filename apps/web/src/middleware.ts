@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const AUTH_ROUTES = ['/login', '/register'];
+const AUTH_ROUTES = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+];
 const PROTECTED_ROUTES = ['/'];
 
 export function middleware(request: NextRequest) {
@@ -19,5 +24,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/register'],
+  matcher: ['/', '/login', '/register', '/forgot-password', '/reset-password'],
 };

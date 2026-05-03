@@ -87,3 +87,35 @@ export function validateRegisterForm(data: {
 
   return errors;
 }
+
+export function validateForgotPasswordForm(data: {
+  email: string;
+}): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  const emailError = validateEmail(data.email);
+  if (emailError) {
+    errors['email'] = emailError;
+  }
+
+  return errors;
+}
+
+export function validateResetPasswordForm(data: {
+  password: string;
+  confirmPassword: string;
+}): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  const passwordError = validatePassword(data.password);
+  if (passwordError) {
+    errors['password'] = passwordError;
+    return errors;
+  }
+
+  if (data.password !== data.confirmPassword) {
+    errors['confirmPassword'] = 'Passwords must match';
+  }
+
+  return errors;
+}

@@ -80,4 +80,31 @@ export async function getCurrentUser(): Promise<IUserResponse | null> {
   }
 }
 
+export async function forgotPassword(data: {
+  email: string;
+}): Promise<{ message: string }> {
+  const response = await fetch('/api/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<{ message: string }>(response);
+}
+
+export async function resetPassword(data: {
+  token: string;
+  password: string;
+}): Promise<{ message: string }> {
+  const response = await fetch('/api/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<{ message: string }>(response);
+}
+
 export { AuthApiError };
