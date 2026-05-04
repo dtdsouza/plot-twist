@@ -18,7 +18,8 @@ import { PasswordResetTokenRepository } from '../persistence/repository/password
 import { EUserStatus } from '../persistence/enum/user-status.enum'
 import { RegisterDto } from '../http/dto/register.dto'
 import { LoginDto } from '../http/dto/login.dto'
-import { IAuthResponse, IUserResponse } from '../http/dto/auth-response.interface'
+import { IAuthResponse } from '../http/dto/auth-response.interface'
+import { toUserResponse } from '../http/dto/user-response.mapper'
 import { EMAIL_SERVICE, type IEmailService } from '../../../infra/mail/interface/email-service.interface'
 import { MAIL_CONFIG_KEY, type IMailConfig } from '../../../infra/config/segment/mail.config'
 
@@ -160,18 +161,7 @@ export class AuthService {
 
     return {
       accessToken,
-      user: this.toUserResponse(user),
-    }
-  }
-
-  private toUserResponse(user: UserEntity): IUserResponse {
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      avatar: user.avatar,
-      bio: user.bio,
-      createdAt: user.createdAt,
+      user: toUserResponse(user),
     }
   }
 }
