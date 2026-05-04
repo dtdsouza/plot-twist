@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Resend } from 'resend'
-import { MAIL_CONFIG_KEY, type IMailConfig } from '../config/segment/mail.config'
+import { MAIL_CONFIG_KEY, type IMailConfig } from '@module/shared/config'
 import type { IEmailService, ISendEmailOptions } from './interface/email-service.interface'
 
 @Injectable()

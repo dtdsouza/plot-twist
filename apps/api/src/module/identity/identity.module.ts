@@ -11,8 +11,8 @@ import { UserEntity } from './persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from './persistence/entity/password-reset-token.entity'
 import { UserRepository } from './persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from './persistence/repository/password-reset-token.repository'
-import { type IJwtConfig } from '../shared/config'
-import { MailModule } from '../shared/mail'
+import { type IJwtConfig } from '@module/shared/config'
+import { MailModule } from '@module/shared/mail'
 
 @Module({
   imports: [

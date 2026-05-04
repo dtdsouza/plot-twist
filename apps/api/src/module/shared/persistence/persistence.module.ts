@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { TypeormPersistenceModule } from '../typeorm'
+import { TypeormPersistenceModule } from '@module/shared/typeorm'
 
 @Module({
   imports: [TypeormPersistenceModule],

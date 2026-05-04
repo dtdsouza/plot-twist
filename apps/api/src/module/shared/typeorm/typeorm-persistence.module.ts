@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import {
   DATABASE_CONFIG_KEY,
   type IDatabaseConfig,
-} from '../config/segment/database.config'
+} from '@module/shared/config'
 
 @Module({
   imports: [

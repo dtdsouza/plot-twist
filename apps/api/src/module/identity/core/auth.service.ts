@@ -20,8 +20,8 @@ import { RegisterDto } from '../http/dto/register.dto'
 import { LoginDto } from '../http/dto/login.dto'
 import { IAuthResponse } from '../http/dto/auth-response.interface'
 import { toUserResponse } from '../http/dto/user-response.mapper'
-import { EMAIL_SERVICE, type IEmailService } from '../../shared/mail/interface/email-service.interface'
-import { MAIL_CONFIG_KEY, type IMailConfig } from '../../shared/config/segment/mail.config'
+import { EMAIL_SERVICE, type IEmailService } from '@module/shared/mail'
+import { MAIL_CONFIG_KEY, type IMailConfig } from '@module/shared/config'
 
 const BCRYPT_SALT_ROUNDS = 12
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour

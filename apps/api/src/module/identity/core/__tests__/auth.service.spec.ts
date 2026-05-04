@@ -13,7 +13,7 @@ import { PasswordResetTokenEntity } from '../../persistence/entity/password-rese
 import { UserRepository } from '../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../persistence/repository/password-reset-token.repository'
 import { EUserStatus } from '../../persistence/enum/user-status.enum'
-import { EMAIL_SERVICE } from '../../../shared/mail/interface/email-service.interface'
+import { EMAIL_SERVICE } from '@module/shared/mail'
 import * as bcrypt from 'bcryptjs'
 import * as crypto from 'node:crypto'
 

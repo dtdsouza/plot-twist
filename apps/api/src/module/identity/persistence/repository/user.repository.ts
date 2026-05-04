@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, QueryFailedError, type DeepPartial } from 'typeorm'
-import { BaseRepository } from '../../../shared/typeorm'
+import { BaseRepository } from '@module/shared/typeorm'
 import { UserEntity } from '../entity/user.entity'
 
 const PG_UNIQUE_VIOLATION = '23505'

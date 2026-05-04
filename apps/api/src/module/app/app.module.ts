@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
-import { ConfigModule } from '../shared/config'
-import { PersistenceModule } from '../shared/persistence'
+import { ConfigModule } from '@module/shared/config'
+import { PersistenceModule } from '@module/shared/persistence'
+import { IdentityModule } from '@module/identity'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
-import { IdentityModule } from '../identity/identity.module'
 
 @Module({
   imports: [
