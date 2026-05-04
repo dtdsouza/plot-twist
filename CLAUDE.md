@@ -27,16 +27,14 @@ plot-twist/
 │   │   └── src/
 │   │       ├── data-source.ts        # TypeORM data source config (CLI entrypoint)
 │   │       ├── main.ts
-│   │       ├── infra/                # Cross-cutting infrastructure
-│   │       │   ├── config/           # Centralized env config (Zod-validated)
-│   │       │   ├── mail/             # Resend email service
-│   │       │   └── typeorm/          # BaseEntity, BaseRepository, TypeormPersistenceModule
-│   │       ├── persistence/          # App-level persistence aggregator
-│   │       │   ├── data-source.options.ts  # Shared DataSourceOptions builder (CLI + runtime)
-│   │       │   └── persistence.module.ts   # Aggregates persistence providers for migrations/DI
-│   │       └── module/               # Domain modules
-│   │           ├── app/              # Root app module
-│   │           └── identity/         # Auth, users, password reset
+│   │       └── module/               # Every NestJS module (domain + shared support)
+│   │           ├── app/              # Root app module (orchestrator)
+│   │           ├── identity/         # Domain: auth, users, password reset
+│   │           └── shared/           # Cross-cutting support modules
+│   │               ├── config/       # Centralized env config (Zod-validated)
+│   │               ├── mail/         # Resend email service
+│   │               ├── typeorm/      # BaseEntity, BaseRepository, TypeormPersistenceModule
+│   │               └── persistence/  # DataSourceOptions builder + PersistenceModule
 │   └── web/                          # Next.js frontend
 ├── docs/                             # Architecture docs
 │   ├── adr/                          # Architecture Decision Records
@@ -51,7 +49,15 @@ plot-twist/
 
 ### API Module Structure
 
-Each domain module under `module/` follows this internal layout:
+All NestJS modules live under `apps/api/src/module/`. There are three kinds:
+
+| Kind | Location | Purpose |
+|------|----------|---------|
+| Orchestrator | `module/app/` | Root `AppModule`; composes domain + shared modules |
+| Domain | `module/{domain}/` (e.g., `identity/`) | A bounded context with its own schema |
+| Shared | `module/shared/{concern}/` | Cross-cutting support (config, mail, typeorm, persistence) |
+
+Each domain module follows this internal layout:
 
 ```
 module/{domain}/
@@ -66,8 +72,29 @@ module/{domain}/
 │   ├── enum/
 │   └── interface/
 ├── migrations/         # TypeORM migrations (schema-scoped)
+├── index.ts            # Public-API barrel (only entry point for cross-module consumers)
 └── {domain}.module.ts
 ```
+
+### Cross-Module Imports (mandatory)
+
+Cross-module imports must use `@module/*` path aliases and resolve to a public-API barrel (`index.ts`). Within-module imports stay relative.
+
+| Alias | Resolves to |
+|-------|-------------|
+| `@module/identity` | `src/module/identity/index.ts` |
+| `@module/shared/config` | `src/module/shared/config/index.ts` |
+| `@module/shared/mail` | `src/module/shared/mail/index.ts` |
+| `@module/shared/typeorm` | `src/module/shared/typeorm/index.ts` |
+| `@module/shared/persistence` | `src/module/shared/persistence/index.ts` |
+
+Allowed dependency directions (enforced by dependency-cruiser):
+
+- Domain modules → themselves, or `module/shared/*` (any sub-module)
+- `module/shared/*` → `module/shared/*` only (never a domain module)
+- `module/app/` → any module (orchestrator exception)
+
+See `docs/adr/0006-module-shared-and-path-aliases.md` for the rationale.
 
 ### Schema Isolation (mandatory)
 
@@ -94,10 +121,10 @@ Libraries live under `libs/{scope}/{type}-{name}` where type is one of:
 
 - **File naming:** kebab-case (e.g., `book-club.service.ts`)
 - **Class naming:** PascalCase (e.g., `BookClubService`)
-- **Organization:** Domain modules under `module/`, infrastructure under `infra/`
+- **Organization:** Every NestJS module lives under `module/` — domains as `module/{domain}/`, cross-cutting concerns as `module/shared/{concern}/`
 - **Pattern:** Controller → Service → Repository (TypeORM)
-- **Config:** Centralized via `infra/config/` with Zod schema validation (`env.schema.ts`)
-- **Email:** Via `infra/mail/` using Resend (`resend-email.service.ts`)
+- **Config:** Centralized via `module/shared/config/` with Zod schema validation (`env.schema.ts`)
+- **Email:** Via `module/shared/mail/` using Resend (`resend-email.service.ts`)
 
 ### Next.js (apps/web)
 

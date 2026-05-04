@@ -34,24 +34,36 @@ Any scope       --> shared/*
 
 ## 2. Composability
 
-Each bounded context is a self-contained NestJS module that can be composed into the application via `app.module.ts`:
+Each bounded context is a self-contained NestJS module that can be composed into the application via `apps/api/src/module/app/app.module.ts`. Inside the API, every NestJS module — domain or shared — lives under `apps/api/src/module/`:
+
+- `module/app/` — orchestrator (root `AppModule`)
+- `module/{domain}/` — bounded contexts (e.g., `identity/`)
+- `module/shared/{concern}/` — cross-cutting support (`config`, `mail`, `typeorm`, `persistence`)
 
 ```typescript
-// apps/api/src/app/app.module.ts
+// apps/api/src/module/app/app.module.ts
+import { ConfigModule } from '@module/shared/config'
+import { PersistenceModule } from '@module/shared/persistence'
+import { IdentityModule } from '@module/identity'
+
 @Module({
   imports: [
-    SharedDatabaseModule,
-    IdentityFeatureModule,
-    SocialFeatureModule,
-    ClubsFeatureModule,
-    ReadingFeatureModule,
-    MeetingsFeatureModule,
+    ConfigModule,
+    PersistenceModule,
+    IdentityModule,
+    // SocialModule, ClubsModule, ReadingModule, MeetingsModule -- future contexts
   ],
 })
 export class AppModule {}
 ```
 
-Each `feature-*` module internally wires its own controllers, services, and repositories. The host application only imports the top-level module -- it never reaches into the internals.
+Cross-module imports use `@module/*` path aliases and resolve to each module's public-API barrel (`index.ts`). Allowed directions (enforced by dependency-cruiser):
+
+- A domain module may import itself or `module/shared/*` only
+- `module/shared/*` may import other `module/shared/*` but never a domain module
+- `module/app/` is the only orchestrator and may import any module
+
+Each module internally wires its own controllers, services, and repositories. The host application only imports the top-level module -- it never reaches into the internals.
 
 **Rule:** A context's `feature-*` module is the only entry point for composing that context into an application.
 
