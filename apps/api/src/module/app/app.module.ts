@@ -9,7 +9,7 @@ import { AppService } from './app.service'
 
 @Module({
   imports: [
-    ConfigModule,
+    ConfigModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     PersistenceModule,
     IdentityModule,
