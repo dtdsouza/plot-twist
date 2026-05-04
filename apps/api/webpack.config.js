@@ -1,4 +1,5 @@
 const { NxAppWebpackPlugin } = require("@nx/webpack/app-plugin");
+const { TsconfigPathsPlugin } = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
 const { join } = require("path");
 
@@ -35,6 +36,13 @@ module.exports = {
         /Critical dependency: the request of a dependency is an expression/,
     },
   ],
+  resolve: {
+    plugins: [
+      new TsconfigPathsPlugin({
+        configFile: join(__dirname, "tsconfig.app.json"),
+      }),
+    ],
+  },
   plugins: [
     new webpack.IgnorePlugin({
       checkResource(resource) {

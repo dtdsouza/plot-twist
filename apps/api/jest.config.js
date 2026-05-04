@@ -1,3 +1,9 @@
+const { pathsToModuleNameMapper } = require('ts-jest')
+const { compilerOptions } = require('./tsconfig.spec.json')
+const { compilerOptions: appCompilerOptions } = require('./tsconfig.app.json')
+
+const paths = compilerOptions.paths ?? appCompilerOptions.paths ?? {}
+
 module.exports = {
   displayName: 'api',
   testEnvironment: 'node',
@@ -6,6 +12,7 @@ module.exports = {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
   testMatch: ['**/__tests__/**/*.spec.ts', '**/__tests__/**/*.int-spec.ts', '**/__tests__/**/*.e2e-spec.ts'],
   coverageDirectory: '../../coverage/apps/api',
   collectCoverageFrom: [

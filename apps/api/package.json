@@ -123,7 +123,7 @@
     }
   },
   "scripts": {
-    "typeorm": "TS_NODE_PROJECT=tsconfig.cli.json typeorm-ts-node-commonjs -d ./src/data-source.ts",
+    "typeorm": "TS_NODE_PROJECT=tsconfig.cli.json NODE_OPTIONS=\"-r tsconfig-paths/register\" typeorm-ts-node-commonjs -d ./src/data-source.ts",
     "migration:generate": "sh scripts/migration.sh generate",
     "migration:create": "sh scripts/migration.sh create",
     "migration:run": "pnpm typeorm migration:run",
@@ -161,6 +161,8 @@
     "dotenv": "^17.4.2",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "~5.9.3",
     "web": "^0.0.2"
   }
