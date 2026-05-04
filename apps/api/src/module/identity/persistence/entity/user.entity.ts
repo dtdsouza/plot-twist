@@ -1,6 +1,6 @@
 import { Entity, Column } from "typeorm";
 import { EUserStatus } from "../enum/user-status.enum";
-import { BaseEntity } from "../../../../infra/typeorm";
+import { BaseEntity } from "../../../shared/typeorm";
 
 @Entity({ schema: "identity", name: "user" })
 export class UserEntity extends BaseEntity {

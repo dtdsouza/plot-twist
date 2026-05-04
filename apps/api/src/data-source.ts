@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
-import { buildDataSourceOptions } from './persistence'
+import { buildDataSourceOptions } from './module/shared/persistence'
 import { UserEntity } from './module/identity/persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from './module/identity/persistence/entity/password-reset-token.entity'
 

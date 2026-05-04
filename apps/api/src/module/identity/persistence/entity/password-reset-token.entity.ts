@@ -1,5 +1,5 @@
 import { Entity, Column } from 'typeorm'
-import { BaseEntity } from '../../../../infra/typeorm'
+import { BaseEntity } from '../../../shared/typeorm'
 
 @Entity({ schema: 'identity', name: 'password_reset_token' })
 export class PasswordResetTokenEntity extends BaseEntity {
