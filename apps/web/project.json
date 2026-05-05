@@ -9,6 +9,7 @@
       }
     },
     "build": {
+      "cache": false,
       "options": {
         "command": "next build",
         "cwd": "apps/web",
