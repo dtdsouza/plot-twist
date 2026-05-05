@@ -33,7 +33,7 @@ describe('ConfigModule', () => {
     const { ConfigService } = await import('@nestjs/config')
 
     module = await Test.createTestingModule({
-      imports: [ConfigModule],
+      imports: [ConfigModule.forRoot()],
     }).compile()
 
     return module.get(ConfigService)
@@ -69,7 +69,7 @@ describe('ConfigModule', () => {
 
     await expect(
       Test.createTestingModule({
-        imports: [ConfigModule],
+        imports: [ConfigModule.forRoot()],
       }).compile(),
     ).rejects.toThrow('Environment validation failed')
   })
@@ -81,7 +81,7 @@ describe('ConfigModule', () => {
 
     await expect(
       Test.createTestingModule({
-        imports: [ConfigModule],
+        imports: [ConfigModule.forRoot()],
       }).compile(),
     ).rejects.toThrow('Environment validation failed')
   })

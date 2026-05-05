@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
 import { ResendEmailService } from '../resend-email.service'
-import { MAIL_CONFIG_KEY } from '../../config/segment/mail.config'
+import { MAIL_CONFIG_KEY } from '@module/shared/config'
 
 jest.mock('resend', () => {
   const mockSend = jest.fn()

@@ -14,7 +14,7 @@ import { PasswordResetTokenEntity } from '../../../persistence/entity/password-r
 import { UserRepository } from '../../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../../persistence/repository/password-reset-token.repository'
 import { EUserStatus } from '../../../persistence/enum/user-status.enum'
-import { EMAIL_SERVICE } from '../../../../../infra/mail/interface/email-service.interface'
+import { EMAIL_SERVICE } from '@module/shared/mail'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)

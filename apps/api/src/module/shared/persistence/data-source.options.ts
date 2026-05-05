@@ -1,6 +1,5 @@
 import { type DataSourceOptions } from 'typeorm'
-import { envSchema } from '../infra/config/env.schema'
-import { databaseConfig } from '../infra/config/segment/database.config'
+import { envSchema, databaseConfig } from '@module/shared/config'
 
 export function buildDataSourceOptions(
   overrides?: Partial<DataSourceOptions>,

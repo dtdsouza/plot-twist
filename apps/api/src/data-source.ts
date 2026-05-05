@@ -1,9 +1,8 @@
 import 'dotenv/config'
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
-import { buildDataSourceOptions } from './persistence'
-import { UserEntity } from './module/identity/persistence/entity/user.entity'
-import { PasswordResetTokenEntity } from './module/identity/persistence/entity/password-reset-token.entity'
+import { buildDataSourceOptions } from '@module/shared/persistence'
+import { UserEntity, PasswordResetTokenEntity } from '@module/identity'
 
 export const AppDataSource = new DataSource(
   buildDataSourceOptions({

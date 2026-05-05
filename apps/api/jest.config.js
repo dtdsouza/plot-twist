@@ -1,3 +1,9 @@
+const { pathsToModuleNameMapper } = require('ts-jest')
+const { compilerOptions } = require('./tsconfig.spec.json')
+const { compilerOptions: appCompilerOptions } = require('./tsconfig.app.json')
+
+const paths = compilerOptions.paths ?? appCompilerOptions.paths ?? {}
+
 module.exports = {
   displayName: 'api',
   testEnvironment: 'node',
@@ -6,26 +12,27 @@ module.exports = {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
   testMatch: ['**/__tests__/**/*.spec.ts', '**/__tests__/**/*.int-spec.ts', '**/__tests__/**/*.e2e-spec.ts'],
   coverageDirectory: '../../coverage/apps/api',
   collectCoverageFrom: [
     'src/module/identity/**/*.ts',
-    'src/infra/config/**/*.ts',
-    'src/infra/typeorm/**/*.ts',
-    'src/persistence/**/*.ts',
+    'src/module/shared/config/**/*.ts',
+    'src/module/shared/typeorm/**/*.ts',
+    'src/module/shared/persistence/**/*.ts',
     '!src/module/identity/**/index.ts',
-    '!src/infra/config/**/index.ts',
-    '!src/infra/typeorm/**/index.ts',
-    '!src/persistence/**/index.ts',
+    '!src/module/shared/config/**/index.ts',
+    '!src/module/shared/typeorm/**/index.ts',
+    '!src/module/shared/persistence/**/index.ts',
     '!src/module/identity/**/*.module.ts',
-    '!src/infra/config/**/*.module.ts',
-    '!src/infra/typeorm/**/*.module.ts',
-    '!src/persistence/**/*.module.ts',
+    '!src/module/shared/config/**/*.module.ts',
+    '!src/module/shared/typeorm/**/*.module.ts',
+    '!src/module/shared/persistence/**/*.module.ts',
     '!src/module/identity/**/migrations/**',
     '!src/module/identity/**/__tests__/**',
-    '!src/infra/config/**/__tests__/**',
-    '!src/infra/typeorm/**/__tests__/**',
-    '!src/persistence/**/__tests__/**',
+    '!src/module/shared/config/**/__tests__/**',
+    '!src/module/shared/typeorm/**/__tests__/**',
+    '!src/module/shared/persistence/**/__tests__/**',
   ],
   coverageThreshold: {
     global: {
