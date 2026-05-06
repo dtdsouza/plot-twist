@@ -2,6 +2,8 @@
 
 Strategic DDD domain model for the Plot-Twist book club platform. This document defines bounded contexts, aggregates, domain events, and their relationships. It serves as the architectural blueprint for all implementation decisions.
 
+**Scope note:** This MVP intentionally focuses on *clubs and the conversations inside them*. Reading-status tracking, social graph, and meeting scheduling are deliberately out of scope — see §8 *Out of Scope* for rationale.
+
 ---
 
 ## 1. Subdomain Classification
@@ -9,14 +11,11 @@ Strategic DDD domain model for the Plot-Twist book club platform. This document 
 | Type | Subdomain | Justification |
 |------|-----------|---------------|
 | **Core** | Club Management | Central concept -- what differentiates Plot-Twist |
-| **Core** | Reading Activity | Book assignments, active reading constraint, reading history |
-| **Core** | Meetings | Scheduling tied to clubs and readings, recurring schedules |
-| **Supporting** | Social Graph | Friendships -- supports discovery and invitations |
-| **Supporting** | Book Catalog | Reference data for books |
+| **Core** | Discussions | Real-time, threaded conversation is how the club lives between events |
 | **Generic** | Identity & Access | Auth, profiles -- solved problem |
 | **Generic** (future) | Notifications | Email/push -- use third-party services |
 
-**Core** subdomains are where Plot-Twist's competitive advantage lies and where the most design effort should be invested. **Supporting** subdomains enable core workflows but are not differentiating. **Generic** subdomains are solved problems that should be implemented with minimal custom logic.
+**Core** subdomains are where Plot-Twist's competitive advantage lies and where the most design effort should be invested. **Generic** subdomains are solved problems that should be implemented with minimal custom logic.
 
 ---
 
@@ -29,74 +28,59 @@ Strategic DDD domain model for the Plot-Twist book club platform. This document 
 - **Key Fields:** email, passwordHash, displayName, avatar, bio
 - **Responsibility:** Owns the canonical user identity. All other contexts reference users by `userId` only.
 
-### BC2: Social (Supporting)
+### BC2: Clubs (Core)
 
-- **Aggregate Root:** `Friendship`
-- **Scope:** Friend requests, accept/decline, friends list, removal
-- **Invariants:**
-  - No self-friend-requests
-  - No duplicate friendship pairs (A-B is the same as B-A)
-  - Only the addressee can accept a request
-
-### BC3: Clubs (Core)
-
-- **Aggregate Root:** `Club` (with child entities `Membership` and `Invitation`)
-- **Scope:** Club CRUD, member roles, invitations, leave/remove
+- **Aggregate Root:** `Club` (with child entities `Membership`, `Invitation`, and a single `inviteLinkToken`)
+- **Scope:** Club CRUD, member roles, invitations (targeted-by-email and shareable-link), leave/remove
+- **Invitation surfaces:**
+  - **Targeted `Invitation`** — bound to a specific email; lifecycle `pending → accepted | declined | revoked`. Only the addressed email can accept.
+  - **Shareable `inviteLinkToken`** — a single regenerable token on the Club. Owner can generate, rotate (replaces the previous token), or revoke (clears it). Anyone signed in who opens an active link joins as a member.
 - **Invariants:**
   - Exactly one owner per club at all times
   - No duplicate memberships (one user, one membership per club)
   - Owner cannot leave without transferring ownership
+  - At most one active invite link token per club; rotating invalidates the previous token immediately
 - **Roles:** `owner`, `member`
+- **Module shape:** A single NestJS module (`module/clubs/`). `Membership` and `Invitation` are child entities of the `Club` aggregate, not separate modules. The aggregate boundary enforces the invariants above.
 
-### BC4: Reading (Core)
+### BC3: Discussions (Core)
 
-- **Aggregate Roots:** `Book` + `ClubReading` (separate aggregates)
-- **Scope:** Book catalog, assign books to clubs, reading status lifecycle
+- **Aggregate Root:** `Message`
+- **Scope:** Real-time chat per club, with threaded replies on top-level messages (Slack-style). One implicit "channel" per club; `clubId` discriminates.
+- **Key Fields:** `id`, `clubId`, `authorId`, `parentMessageId` (nullable), `content`, `postedAt`, `editedAt`, `deletedAt`
+- **Threading rule:** Two levels maximum. A `Message` is either top-level (`parentMessageId === null`) or a thread reply pointing at a top-level message. Replies-to-replies are not allowed — they collapse into the same thread.
 - **Invariants:**
-  - At most one active reading per club at any time
-  - A reading must reference a valid book and club
-- **Design Decision:** `Book` and `ClubReading` are separate aggregates because books exist independently and can be shared across clubs. `Book` is a reference entity; `ClubReading` is the behavioral aggregate.
-- **Reading Status Lifecycle:** `planned` -> `active` -> `finished` (or `abandoned`)
-
-### BC5: Meetings (Core)
-
-- **Aggregate Root:** `Meeting`
-- **Scope:** Schedule meetings, recurring patterns, video call links, notes
-- **References:** `clubId` and `bookId` by value (not by aggregate relationship)
-- **Design Decision:** Meetings reference clubs and readings by ID only. This keeps the Meeting aggregate self-contained and avoids cross-context coupling.
+  - Author must be a member of the club at post time
+  - A thread reply must reference a top-level message in the same club
+  - Edits and deletes are author-only (or club owner for moderation)
+- **Real-time delivery:** WebSocket gateway (NestJS `@WebSocketGateway`). Persistence is the source of truth; the gateway broadcasts after the message is persisted.
 
 ---
 
 ## 3. Context Map
 
 ```
-  Identity ──(conformist)──> Social
-     │
-     │ conformist (userId refs)
-     v
-   Clubs <──(customer/supplier)──> Reading
-     │                                │
-     │ customer/supplier              │ customer/supplier
-     v                                v
-                  Meetings
+  Identity ──(conformist, userId refs)──> Clubs
+                                            │
+                                            │ customer/supplier
+                                            v
+                                       Discussions
 ```
 
 ### Integration Patterns
 
 | Upstream | Downstream | Pattern | What Flows |
 |----------|------------|---------|------------|
-| Identity | Social, Clubs, Reading | Conformist | `userId` as-is |
-| Clubs | Reading | Customer/Supplier | `ClubCreated`, `ClubDeleted` events |
-| Clubs | Meetings | Customer/Supplier | Membership events |
-| Reading | Meetings | Customer/Supplier | `ReadingStarted`, `ReadingFinished` events |
+| Identity | Clubs, Discussions | Conformist | `userId` as-is |
+| Clubs | Discussions | Customer/Supplier | `MemberJoined`, `MemberRemoved`, `ClubDeleted` events |
 
 **Conformist** means the downstream context adopts the upstream model as-is (no translation layer). This is appropriate for Identity because `userId` is a stable, simple reference.
 
-**Customer/Supplier** means the upstream context publishes events that the downstream context consumes. The upstream team considers downstream needs when evolving the API.
+**Customer/Supplier** means the upstream context publishes events that the downstream context consumes. Discussions cares who is currently a member (to enforce post-time membership) and when a club is deleted (to soft-delete or archive its messages).
 
 ### Shared Kernel
 
-`shared/util-types` contains branded ID types, pagination interfaces, and the API response interface. This is intentionally minimal -- only types that genuinely need to be identical across all contexts belong here.
+`module/shared/util-types` (or equivalent) holds branded ID types and common response shapes. Kept intentionally minimal — only types that genuinely need to be identical across contexts.
 
 ---
 
@@ -106,112 +90,67 @@ Strategic DDD domain model for the Plot-Twist book club platform. This document 
 
 | Event | Payload | Key Consumers |
 |-------|---------|---------------|
-| `UserRegistered` | userId, email, displayName | Social, Clubs |
-| `UserProfileUpdated` | userId, changedFields | Social |
-| `UserDeleted` | userId | Social, Clubs, Reading, Meetings |
-
-### Social Context
-
-| Event | Payload | Key Consumers |
-|-------|---------|---------------|
-| `FriendRequestSent` | requesterId, addresseeId | Notifications (future) |
-| `FriendRequestAccepted` | requesterId, addresseeId | Notifications (future) |
+| `UserRegistered` | userId, email, displayName | Clubs |
+| `UserProfileUpdated` | userId, changedFields | Clubs, Discussions (denormalized author display) |
+| `UserDeleted` | userId | Clubs, Discussions |
 
 ### Clubs Context
 
 | Event | Payload | Key Consumers |
 |-------|---------|---------------|
-| `ClubCreated` | clubId, ownerId, name | Reading |
-| `ClubDeleted` | clubId | Reading, Meetings |
-| `MemberJoined` | clubId, userId, role | Meetings |
-| `MemberRemoved` | clubId, userId | Meetings |
-| `MemberInvited` | clubId, inviteeId, inviterId | Notifications (future) |
+| `ClubCreated` | clubId, ownerId, name | Discussions (provisions implicit channel) |
+| `ClubDeleted` | clubId | Discussions |
+| `MemberJoined` | clubId, userId, role | Discussions |
+| `MemberRemoved` | clubId, userId | Discussions |
+| `MemberInvited` | clubId, inviteeEmail, inviterId | Notifications (future, sends invitation email) |
+| `InviteLinkRotated` | clubId, rotatedBy | -- |
+| `InviteLinkRevoked` | clubId, revokedBy | -- |
 
-### Reading Context
-
-| Event | Payload | Key Consumers |
-|-------|---------|---------------|
-| `BookAddedToCatalog` | bookId, title, author | -- |
-| `ReadingStarted` | clubReadingId, clubId, bookId | Meetings |
-| `ReadingFinished` | clubReadingId, clubId, bookId | Meetings |
-
-### Meetings Context
+### Discussions Context
 
 | Event | Payload | Key Consumers |
 |-------|---------|---------------|
-| `MeetingScheduled` | meetingId, clubId, date | Notifications (future) |
-| `MeetingCanceled` | meetingId, clubId | Notifications (future) |
-| `MeetingUpdated` | meetingId, changedFields | Notifications (future) |
+| `MessagePosted` | messageId, clubId, authorId, parentMessageId | Notifications (future, e.g., @mentions) |
+| `MessageEdited` | messageId, editedAt | -- |
+| `MessageDeleted` | messageId, deletedAt | -- |
 
-**MVP Infrastructure:** NestJS `EventEmitter2` (in-process, synchronous). This is sufficient for a single-process monolith. Migrate to a message broker (e.g., RabbitMQ, AWS SNS/SQS) when scale demands it or when contexts are extracted into separate services.
+**MVP Infrastructure:** NestJS `EventEmitter2` (in-process, synchronous). Sufficient for a single-process monolith. Migrate to a message broker (RabbitMQ, AWS SNS/SQS) when scale demands it or when contexts are extracted into separate services.
 
 ---
 
-## 5. Nx Library Structure
+## 5. Module Structure (apps/api)
 
-### Naming Convention
-
-```
-libs/{scope}/{type}-{name}
-```
-
-Where `{type}` is one of: `feature`, `ui`, `data-access`, `util`.
-
-### Backend Libraries
+All NestJS modules live under `apps/api/src/module/`. See `CLAUDE.md` and ADR-0006 for the full convention.
 
 ```
-libs/
-  shared/
-    util-types/              # Branded IDs, IApiResponse, IPaginatedResponse, IBaseEntity
-    util-events/             # Domain event definitions, IEventBus interface
-    data-access-database/    # TypeORM config, database module, migrations
-
-  identity/
-    util-identity/           # DTOs, IUser, EUserStatus
-    data-access-identity/    # User entity, user repository
-    feature-identity/        # Auth + User controllers, services, JWT guard
-
-  social/
-    util-social/             # DTOs, IFriendship, EFriendshipStatus
-    data-access-social/      # Friendship entity, repository
-    feature-social/          # Friendship controller, service
-
-  clubs/
-    util-clubs/              # DTOs, IClub, IMembership, EClubRole, EInvitationStatus
-    data-access-clubs/       # Club, Membership, Invitation entities, repositories
-    feature-clubs/           # Club controller, membership service
-
-  reading/
-    util-reading/            # DTOs, IBook, IClubReading, EReadingStatus
-    data-access-reading/     # Book, ClubReading entities, repositories
-    feature-reading/         # Book + ClubReading controllers, services
-
-  meetings/
-    util-meetings/           # DTOs, IMeeting, ERecurringSchedule
-    data-access-meetings/    # Meeting entity, repository
-    feature-meetings/        # Meeting controller, service
+apps/api/src/module/
+├── app/                         # Orchestrator (root AppModule)
+├── identity/                    # BC1
+├── clubs/                       # BC2
+├── discussions/                 # BC3
+└── shared/
+    ├── config/                  # Zod-validated env
+    ├── mail/                    # Resend
+    ├── typeorm/                 # BaseEntity, BaseRepository, TypeormPersistenceModule
+    └── persistence/             # DataSourceOptions builder + PersistenceModule
 ```
 
-### Dependency Rules (Nx Module Boundaries)
+### Cross-Module Imports
 
-```
-feature-*       --> data-access-*, util-*
-data-access-*   --> util-*
-util-*          --> shared/util-types only
-Any scope       --> shared/*
-```
+Cross-module imports use `@module/*` path aliases and resolve to a public-API barrel (`index.ts`). Within-module imports stay relative. Allowed dependency directions are enforced by dependency-cruiser:
 
-Cross-scope dependencies flow only through **util** libraries (ID types, DTOs) -- never direct service imports between contexts.
+- Domain modules → themselves, or `module/shared/*`
+- `module/shared/*` → `module/shared/*` only
+- `module/app/` → any module (orchestrator exception)
 
-### Frontend Libraries (Future)
+### Future Frontend Libraries
 
 ```
 libs/
-  identity/  feature-auth/, ui-auth/, data-access-auth/
-  clubs/     feature-club-list/, feature-club-detail/, ui-club-card/, data-access-clubs/
-  reading/   feature-book-search/, ui-book-card/, data-access-reading/
-  meetings/  feature-meeting-list/, ui-meeting-card/, data-access-meetings/
-  shared/    ui-layout/, ui-components/, util-formatting/
+  identity/    feature-auth/, ui-auth/, data-access-auth/
+  clubs/       feature-club-list/, feature-club-detail/, ui-club-card/, data-access-clubs/
+  discussions/ feature-chat/, ui-message/, data-access-discussions/
+  shared/      ui-layout/, ui-components/, util-formatting/
 ```
 
 ---
@@ -223,16 +162,16 @@ Single PostgreSQL instance with **separate schemas per bounded context**:
 | Context | Schema | Tables |
 |---------|--------|--------|
 | Identity | `identity` | `identity.user` |
-| Social | `social` | `social.friendship` |
-| Clubs | `clubs` | `clubs.club`, `clubs.membership`, `clubs.invitation` |
-| Reading | `reading` | `reading.book`, `reading.club_reading` |
-| Meetings | `meetings` | `meetings.meeting` |
+| Clubs | `clubs` | `clubs.club` (includes `inviteLinkToken`), `clubs.membership`, `clubs.invitation` |
+| Discussions | `discussions` | `discussions.message` |
 
 ### Rules
 
 - **No JOINs across schemas.** Cross-context data is assembled at the application layer.
-- Each `data-access-*` module configures its own schema via the entity decorator: `@Entity({ schema: 'identity' })`.
+- Each module configures its own schema via the entity decorator: `@Entity({ schema: 'identity', name: 'user' })`.
 - Each schema can be extracted to its own database later without changing domain logic.
+
+See `docs/STATE-ISOLATION.md` for the full rules.
 
 ---
 
@@ -242,24 +181,35 @@ New features map cleanly to this structure without modifying existing contexts:
 
 | Future Feature | Approach | Impact on Existing |
 |----------------|----------|--------------------|
-| Discussion threads | New `discussions/` bounded context | None |
-| Reading progress | Extend `reading/` with `ReadingProgress` entity | Additive only |
-| Book ratings/reviews | New `reviews/` bounded context | None |
+| Reading status / progress | New `reading/` BC if needed; otherwise rely on external apps (Goodreads, StoryGraph) | None |
+| Meetings / scheduling | New `meetings/` BC; otherwise paste a Zoom/Meet link in chat | None |
+| Social graph (friends, discovery) | New `social/` BC | None |
+| Book ratings/reviews | New `reviews/` BC | None |
 | Recommendations | New `recommendations/` context (read model, CQRS) | None |
 | Notifications | New `notifications/` context (downstream consumer) | None |
-| External book APIs | ACL adapter in `reading/data-access-book-providers/` | None |
-| Real-time chat | New `chat/` bounded context with WebSocket gateway | None |
+| External book APIs | ACL adapter under `module/shared/` or new module | None |
+| Message reactions, attachments | Extend `discussions/` additively | Additive only |
 
 ---
 
-## 8. Implementation Priority
+## 8. Out of Scope (and why)
 
-1. `shared/util-types` + `shared/util-events` + `shared/data-access-database`
-2. `identity/*` (prerequisite for everything)
-3. `social/*`
-4. `clubs/*`
-5. `reading/*`
-6. `meetings/*`
-7. Wire all feature modules into `apps/api/app.module.ts`
+These were considered and intentionally excluded from the MVP. Documented here so future contributors understand the deliberate omissions.
 
-Each phase should be a complete vertical slice: types, entities, repository, service, controller, and tests.
+| Excluded | Rationale |
+|----------|-----------|
+| **Social graph (friendships)** | Club membership is the only social relationship that matters for MVP. Friend requests don't enable anything users can't already do via club invitations. |
+| **Reading status / progress** | Goodreads, StoryGraph, and the like already solve this well. Plot-Twist is about the *club*, not the user's personal reading log. Revisit if a club-specific need emerges (e.g., "where is everyone in the current book"). |
+| **Meetings** | A Zoom or Meet link pasted into the club chat is sufficient. No scheduling, recurrence, or reminders to model. Revisit when there's a real workflow around it. |
+| **Separate Membership module** | `Membership` is a child entity of the `Club` aggregate; the aggregate enforces invariants. A separate NestJS module would split the boundary without solving a real problem. |
+
+---
+
+## 9. Implementation Priority
+
+1. `module/shared/*` (already in place: `config`, `mail`, `typeorm`, `persistence`)
+2. `module/identity/*` (already implemented)
+3. `module/clubs/*` — Club CRUD, membership, invitations
+4. `module/discussions/*` — Message persistence + WebSocket gateway
+
+Each phase should be a complete vertical slice: entities, repository, service, controller (or gateway), and tests.
