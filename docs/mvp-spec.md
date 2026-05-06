@@ -2,7 +2,9 @@
 
 ## Overview
 
-Plot-Twist is a book club management platform that helps readers organize clubs, schedule meetings, and track reading progress together. The MVP focuses on core club management — no real-time chat, just the tools needed to run a book club effectively.
+Plot-Twist is a book club platform focused on the *club itself* — bringing members together and giving them a place to talk. The MVP narrows to two core capabilities: **club management** and **real-time chat inside each club**.
+
+Reading-status tracking, social graphs, and meeting scheduling are intentionally out of scope for the MVP. See [Out of Scope](#out-of-scope) for rationale, and `docs/DOMAINS-DEFINITION.md` for the full domain model.
 
 ## Core Entities
 
@@ -10,43 +12,44 @@ Plot-Twist is a book club management platform that helps readers organize clubs,
 
 - Email/password registration and login
 - Profile: display name, avatar, bio
-- Ability to add and manage friends
-
-### Friendship
-
-- Send, accept, and decline friend requests
-- View friends list
-- Remove friends
+- Password reset by email
 
 ### Club
 
 - Name, description, cover image
 - Created by a user (owner)
-- Invite friends to join the club
-- Members can leave; owner can remove members
+- Owner invites other users in two ways: a **targeted email invitation**, or a **shareable invite link** they can copy and send via any channel
+- Members can leave; owner can remove members; owner can transfer ownership
 - Roles: **owner** and **member**
+- Each club has exactly one chat (see Message)
 
-### Book
+### Membership
 
-- Title, author, cover image, description
-- ISBN (optional)
-- Genre/tags (optional)
-- Added to the platform by any user
+- A user's participation in a club, with role (`owner` or `member`)
+- Child entity of Club (no separate API surface beyond club endpoints)
 
-### Club Book (Reading Assignment)
+### Invitation (targeted)
 
-- Assign a book to a club as the current read
-- Status: **reading**, **finished**
-- Only one active book per club at a time
-- History of previously read books
+- Sent by an owner to a specific email address
+- Status: **pending**, **accepted**, **declined**, **revoked**
+- The recipient receives an email with a link; only that email can accept
+- Child entity of Club
 
-### Meeting
+### Invite Link (shareable)
 
-- Tied to a club
-- Date and time
-- Google Meet link (auto-generated or manually added)
-- Recurring schedule: weekly, biweekly, or monthly
-- Meeting notes (optional, added after the meeting)
+- One regenerable token per club, owned by the Club aggregate
+- Owner can **generate**, **rotate** (replaces the existing token), or **revoke** (removes the token)
+- Anyone signed in who opens an active link joins the club as a member
+- Rotating the token immediately invalidates the previous one
+- Surfaces as a copyable URL in the club settings; the owner shares it via any channel they want
+
+### Message (Discussions)
+
+- A chat message inside a club. One implicit chat per club (no multi-channel).
+- Fields: `clubId`, `authorId`, `content`, `parentMessageId` (nullable), `postedAt`, `editedAt`, `deletedAt`
+- **Threading:** two levels max. A message is either top-level (`parentMessageId === null`) or a reply pointing at a top-level message. Replies-to-replies collapse into the same thread — there's no nesting beyond one level.
+- Author can edit and delete their own messages. Club owner can delete any message in their club (moderation).
+- Real-time delivery via WebSocket; persistence is the source of truth.
 
 ## Pages & Screens
 
@@ -62,36 +65,26 @@ Plot-Twist is a book club management platform that helps readers organize clubs,
 
 | Section | Description |
 |---------|-------------|
-| My Clubs | List of clubs the user belongs to |
-| Upcoming Meetings | Next scheduled meetings across all clubs |
-| Currently Reading | Books assigned in the user's clubs |
+| My Clubs | List of clubs the user belongs to, with unread-message indicator |
+| Create Club | Entry point to club creation |
 
 ### User Profile
 
 | Section | Description |
 |---------|-------------|
 | Profile Info | Display name, avatar, bio, edit options |
-| Friends | Friends list, pending requests, search users |
-| Reading History | Books finished across all clubs |
-
-### Friends
-
-| Screen | Description |
-|--------|-------------|
-| Friends List | All current friends with remove option |
-| Friend Requests | Incoming requests with accept/decline |
-| Find Friends | Search users by name or email, send request |
+| Account | Change password, sign out |
 
 ### Club Detail
 
+The chat is the **default view** of a club — that's where members spend their time.
+
 | Section | Description |
 |---------|-------------|
-| Overview | Club name, description, cover image, member count |
-| Members | List of members with roles; invite friends button |
-| Current Book | The book being read now, with progress status |
-| Book History | Previously read books |
-| Meetings | Upcoming and past meetings |
-| Settings | Edit club info, meeting frequency, manage members (owner only) |
+| Chat | Real-time message list with composer; threaded replies open in a side panel |
+| Members | List of members with roles; owner can invite by email or remove members |
+| Invite Link (owner only) | Copy current invite link, rotate it, or revoke it |
+| Settings (owner only) | Edit club info, manage members, transfer ownership, delete club |
 
 ### Club Creation / Edit
 
@@ -100,66 +93,63 @@ Plot-Twist is a book club management platform that helps readers organize clubs,
 | Name | Club name (required) |
 | Description | Short description |
 | Cover Image | Upload or choose default |
-| Meeting Frequency | Weekly, biweekly, monthly, or none |
-| Meeting Day & Time | Preferred day of the week and time |
 
-### Book Search & Assignment
+### Chat Interactions
 
-| Screen | Description |
-|--------|-------------|
-| Search Books | Search by title or author (from platform catalog) |
-| Add Book | Manually add a book if not found |
-| Assign to Club | Select a book and set it as the club's current read |
-
-### Meeting Detail
-
-| Field | Description |
-|-------|-------------|
-| Date & Time | When the meeting takes place |
-| Google Meet Link | Link to join the video call |
-| Club & Book | Which club and what book is being discussed |
-| Notes | Optional post-meeting notes or discussion points |
+| Interaction | Description |
+|-------------|-------------|
+| Post message | Composer at the bottom of the chat |
+| Reply in thread | Opens a side panel/modal showing the parent message + its replies |
+| Edit message | Author-only; shows "edited" indicator |
+| Delete message | Author or club owner; deleted messages render as a tombstone |
+| Thread indicator | Top-level messages with replies show "N replies" + last reply time |
 
 ## User Flows
 
 ### 1. Sign Up and Create First Club
 
-1. User signs up with email and password
+1. User signs up with email, password, and display name
 2. Lands on empty dashboard
 3. Taps "Create Club"
-4. Fills in club name, description, and meeting preferences
-5. Invites friends by searching their name/email
-6. Club is created and visible on dashboard
+4. Fills in club name, description, optional cover image
+5. Invites other users by email or username
+6. Lands in the new club's chat — empty state explains how to start the conversation
 
-### 2. Assign a Book to a Club
+### 2a. Join a Club via Email Invitation
 
-1. Owner opens club detail
-2. Taps "Set Current Book"
-3. Searches for a book by title/author
-4. If not found, adds it manually
-5. Confirms selection — book appears as current read for all members
+1. Owner enters the invitee's email in the club's Members section
+2. System creates a pending invitation and sends an email with an accept link
+3. Recipient opens the link, signs in (or signs up first), and accepts
+4. Recipient becomes a member and lands in the club's chat
 
-### 3. Schedule and Join Meetings
+### 2b. Join a Club via Invite Link
 
-1. Owner sets meeting frequency during club creation (or in settings)
-2. System generates recurring meetings based on frequency
-3. Each meeting has a Google Meet link
-4. Members see upcoming meetings on dashboard and club detail
-5. Members click the link to join at the scheduled time
+1. Owner opens club settings and taps "Copy invite link" (generating one if none exists)
+2. Owner shares the link via any channel (DM, email, message app, etc.)
+3. Recipient opens the link
+4. If signed in, they're added as a member immediately and land in the chat
+5. If not signed in, they're prompted to sign in or sign up; after auth they're added and land in the chat
+6. If the link has been rotated or revoked, the recipient sees a "this link is no longer valid" message
 
-### 4. Add a Friend
+### 3. Post and Reply in Chat
 
-1. User navigates to Friends
-2. Searches by name or email
-3. Sends friend request
-4. Other user accepts
-5. Both appear in each other's friends list
+1. Member opens a club
+2. Types in the composer and sends a message
+3. Another member opens that message as a thread and replies
+4. The original message shows a "1 reply" indicator
+5. All members see new messages in real time
 
-### 5. Complete a Book and Start Next
+### 4. Moderate a Message (Owner)
 
-1. Owner marks current book as "finished"
-2. Book moves to club's reading history
-3. Owner assigns a new book as the current read
+1. Owner taps a message in their club
+2. Selects "Delete"
+3. Message renders as a tombstone for all members
+
+### 5. Leave or Transfer Ownership
+
+1. Member opens club settings → "Leave club"
+2. If the user is the owner, they must transfer ownership to another member first
+3. After transfer, the original owner can leave
 
 ## API Endpoints (Overview)
 
@@ -168,47 +158,52 @@ Plot-Twist is a book club management platform that helps readers organize clubs,
 - `POST /auth/register`
 - `POST /auth/login`
 - `POST /auth/forgot-password`
+- `POST /auth/reset-password`
 
 ### Users
 
 - `GET /users/me`
 - `PATCH /users/me`
-- `GET /users/search?q=`
-
-### Friends
-
-- `GET /friends`
-- `POST /friends/request`
-- `POST /friends/accept/:id`
-- `POST /friends/decline/:id`
-- `DELETE /friends/:id`
+- `GET /users/search?q=` (used by club invitations)
 
 ### Clubs
 
 - `POST /clubs`
-- `GET /clubs`
+- `GET /clubs` (clubs the current user belongs to)
 - `GET /clubs/:id`
 - `PATCH /clubs/:id`
 - `DELETE /clubs/:id`
-- `POST /clubs/:id/invite`
+- `POST /clubs/:id/invitations` (body: `email`)
+- `POST /clubs/:id/invitations/:invitationId/accept`
+- `POST /clubs/:id/invitations/:invitationId/decline`
+- `POST /clubs/:id/invite-link` (generate or rotate the shareable link; returns the URL)
+- `DELETE /clubs/:id/invite-link` (revoke)
+- `POST /invite-links/:token/accept` (recipient redeems the link; auth required)
 - `POST /clubs/:id/leave`
+- `POST /clubs/:id/transfer-ownership`
 - `DELETE /clubs/:id/members/:userId`
 
-### Books
+### Discussions
 
-- `GET /books/search?q=`
-- `POST /books`
-- `GET /books/:id`
+- `GET /clubs/:id/messages?cursor=&limit=` (paginated, top-level messages newest-first)
+- `GET /messages/:id/replies` (replies in a thread)
+- `POST /clubs/:id/messages` (body: `content`, optional `parentMessageId`)
+- `PATCH /messages/:id` (author only)
+- `DELETE /messages/:id` (author or club owner)
 
-### Club Books
+### WebSocket Gateway
 
-- `POST /clubs/:id/books`
-- `PATCH /clubs/:id/books/:bookId`
-- `GET /clubs/:id/books`
+- Channel: `club:{clubId}`
+- Events: `message.posted`, `message.edited`, `message.deleted`
+- Auth: JWT on connection; subscription requires active membership in the club
 
-### Meetings
+## Out of Scope
 
-- `GET /clubs/:id/meetings`
-- `POST /clubs/:id/meetings`
-- `PATCH /meetings/:id`
-- `DELETE /meetings/:id`
+| Excluded | Rationale |
+|----------|-----------|
+| **Friendships / social graph** | Club membership is the only social relationship the MVP needs. Friend requests don't enable anything users can't already do via club invitations. |
+| **Reading status / progress / book catalog** | Goodreads, StoryGraph, and similar apps already solve this well. Plot-Twist is about the club, not the user's personal reading log. |
+| **Meetings / scheduling** | A Zoom or Google Meet link pasted into the club chat is sufficient. No scheduling, recurrence, or reminders to model in the MVP. |
+| **Multi-channel chat per club** | One club = one chat. Threading handles topic isolation; multi-channel adds UI complexity without clear MVP value. |
+
+Each of these can be reintroduced as its own bounded context post-MVP without disturbing the existing design — see `docs/DOMAINS-DEFINITION.md` §7.
