@@ -1,0 +1,81 @@
+.topbar {
+  height: 64px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(216, 209, 194, 0.5);
+  background: rgba(249, 245, 236, 0.92);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--color-text);
+  font-family: var(--font-label);
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.iconButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.iconButton:not(:disabled):hover {
+  background: var(--color-surface);
+}
+
+.bellButton {
+  position: relative;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--color-text);
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.bellButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.bellButton:not(:disabled):hover {
+  background: var(--color-surface);
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.searchLabel {
+  font-family: var(--font-label);
+}
+
+.bellDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}

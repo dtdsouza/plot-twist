@@ -1,0 +1,12 @@
+.mark {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text);
+}
+
+.wordmark {
+  font-family: var(--font-heading);
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
