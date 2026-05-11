@@ -1,7 +1,7 @@
 ---
 title: "feat: Profile/Account pages + app shell (Topbar/Sidebar) + placeholder routes"
 type: feat
-status: active
+status: completed
 date: 2026-05-11
 ---
 
