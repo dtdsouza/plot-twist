@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
   Inject,
   Logger,
 } from '@nestjs/common'
@@ -18,6 +19,7 @@ import { PasswordResetTokenRepository } from '../persistence/repository/password
 import { EUserStatus } from '../persistence/enum/user-status.enum'
 import { RegisterDto } from '../http/dto/register.dto'
 import { LoginDto } from '../http/dto/login.dto'
+import { ChangePasswordDto } from '../http/dto/change-password.dto'
 import { IAuthResponse } from '../http/dto/auth-response.interface'
 import { toUserResponse } from '../http/dto/user-response.mapper'
 import { EMAIL_SERVICE, type IEmailService } from '@module/shared/mail'
@@ -153,6 +155,36 @@ export class AuthService {
     })
 
     this.logger.log(`Password reset successful for user: ${user.id}`)
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    // Rate limiting deferred -- consider Throttle decorator at controller layer in the future
+    const user = await this.userRepository.findOne({ id: userId })
+
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    )
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password incorrect')
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_SALT_ROUNDS)
+
+    await this.userRepository.update(user.id, { passwordHash })
+
+    // JWT invalidation deferred -- existing tokens remain valid until expiry
+    this.logger.log(`Password changed for user: ${user.id}`)
+
+    return { message: 'Password updated' }
   }
 
   private buildAuthResponse(user: UserEntity): IAuthResponse {

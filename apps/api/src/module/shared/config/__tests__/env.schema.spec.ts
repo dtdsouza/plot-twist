@@ -16,6 +16,7 @@ describe('envSchema', () => {
     RESEND_API_KEY: 're_test_api_key',
     RESEND_FROM_ADDRESS: 'Plot-Twist <onboarding@resend.dev>',
     PASSWORD_RESET_URL: 'http://localhost:4200/reset-password',
+    EMAIL_CHANGE_VERIFICATION_URL: 'http://localhost:4200/verify-email-change',
   }
 
   it('should parse a fully valid env', () => {
@@ -32,6 +33,7 @@ describe('envSchema', () => {
     expect(result.RESEND_API_KEY).toBe('re_test_api_key')
     expect(result.RESEND_FROM_ADDRESS).toBe('Plot-Twist <onboarding@resend.dev>')
     expect(result.PASSWORD_RESET_URL).toBe('http://localhost:4200/reset-password')
+    expect(result.EMAIL_CHANGE_VERIFICATION_URL).toBe('http://localhost:4200/verify-email-change')
   })
 
   it('should apply defaults when optional fields are omitted', () => {
@@ -55,6 +57,7 @@ describe('envSchema', () => {
     expect(result.RESEND_API_KEY).toBe('re_test_api_key')
     expect(result.RESEND_FROM_ADDRESS).toBe('Plot-Twist <onboarding@resend.dev>')
     expect(result.PASSWORD_RESET_URL).toBe('http://localhost:4200/reset-password')
+    expect(result.EMAIL_CHANGE_VERIFICATION_URL).toBe('http://localhost:4200/verify-email-change')
   })
 
   it('should reject missing JWT_SECRET', () => {

@@ -9,4 +9,5 @@ export interface ISendEmailOptions {
 
 export interface IEmailService {
   send(options: ISendEmailOptions): Promise<void>
+  sendEmailChangeVerification(toEmail: string, verificationUrl: string): Promise<void>
 }

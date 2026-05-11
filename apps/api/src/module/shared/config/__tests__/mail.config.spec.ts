@@ -9,6 +9,7 @@ describe('mailConfig', () => {
       RESEND_API_KEY: 're_test_api_key',
       RESEND_FROM_ADDRESS: 'Plot-Twist <onboarding@resend.dev>',
       PASSWORD_RESET_URL: 'http://localhost:4200/reset-password',
+      EMAIL_CHANGE_VERIFICATION_URL: 'http://localhost:4200/verify-email-change',
     }
   })
 
@@ -26,6 +27,7 @@ describe('mailConfig', () => {
     expect(config.apiKey).toBe('re_test_api_key')
     expect(config.fromAddress).toBe('Plot-Twist <onboarding@resend.dev>')
     expect(config.passwordResetUrl).toBe('http://localhost:4200/reset-password')
+    expect(config.emailChangeVerificationUrl).toBe('http://localhost:4200/verify-email-change')
   })
 
   it('should return a frozen object', () => {

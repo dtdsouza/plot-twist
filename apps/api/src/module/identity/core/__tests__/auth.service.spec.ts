@@ -5,6 +5,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AuthService } from '../auth.service'
@@ -551,6 +552,89 @@ describe('AuthService', () => {
 
       // Assert
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('changePassword', () => {
+    const changePasswordDto = {
+      currentPassword: 'oldPassword123',
+      newPassword: 'newPassword456',
+    }
+
+    it('should update password hash and return success message on valid current password', async () => {
+      // Arrange
+      mockUserRepository.findOne.mockResolvedValue(mockUser)
+      mockBcrypt.compare.mockResolvedValue(true as never)
+      mockBcrypt.hash.mockResolvedValue('new-hashed-password' as never)
+      mockUserRepository.update.mockResolvedValue({
+        ...mockUser,
+        passwordHash: 'new-hashed-password',
+      })
+
+      // Act
+      const result = await service.changePassword(mockUser.id, changePasswordDto)
+
+      // Assert
+      expect(result).toEqual({ message: 'Password updated' })
+      expect(mockBcrypt.compare).toHaveBeenCalledWith(
+        'oldPassword123',
+        mockUser.passwordHash,
+      )
+      expect(mockBcrypt.hash).toHaveBeenCalledWith('newPassword456', 12)
+      expect(mockUserRepository.update).toHaveBeenCalledWith(mockUser.id, {
+        passwordHash: 'new-hashed-password',
+      })
+    })
+
+    it('should throw UnauthorizedException when current password is wrong', async () => {
+      // Arrange
+      mockUserRepository.findOne.mockResolvedValue(mockUser)
+      mockBcrypt.compare.mockResolvedValue(false as never)
+
+      // Act & Assert
+      await expect(
+        service.changePassword(mockUser.id, changePasswordDto),
+      ).rejects.toThrow(UnauthorizedException)
+      await expect(
+        service.changePassword(mockUser.id, changePasswordDto),
+      ).rejects.toThrow('Current password incorrect')
+      expect(mockUserRepository.update).not.toHaveBeenCalled()
+    })
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      // Arrange
+      mockUserRepository.findOne.mockResolvedValue(null)
+
+      // Act & Assert
+      await expect(
+        service.changePassword('missing-user-id', changePasswordDto),
+      ).rejects.toThrow(NotFoundException)
+      expect(mockBcrypt.compare).not.toHaveBeenCalled()
+      expect(mockUserRepository.update).not.toHaveBeenCalled()
+    })
+
+    it('should allow new password identical to current password', async () => {
+      // Arrange
+      const sameDto = {
+        currentPassword: 'samePassword123',
+        newPassword: 'samePassword123',
+      }
+      mockUserRepository.findOne.mockResolvedValue(mockUser)
+      mockBcrypt.compare.mockResolvedValue(true as never)
+      mockBcrypt.hash.mockResolvedValue('re-hashed-same-password' as never)
+      mockUserRepository.update.mockResolvedValue({
+        ...mockUser,
+        passwordHash: 're-hashed-same-password',
+      })
+
+      // Act
+      const result = await service.changePassword(mockUser.id, sameDto)
+
+      // Assert
+      expect(result).toEqual({ message: 'Password updated' })
+      expect(mockUserRepository.update).toHaveBeenCalledWith(mockUser.id, {
+        passwordHash: 're-hashed-same-password',
+      })
     })
   })
 })

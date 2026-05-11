@@ -34,4 +34,15 @@ export class ResendEmailService implements IEmailService {
 
     this.logger.log(`Email sent successfully to ${options.to}, id: ${data?.id}`)
   }
+
+  async sendEmailChangeVerification(
+    toEmail: string,
+    verificationUrl: string,
+  ): Promise<void> {
+    const subject = 'Verify your new Plot-Twist email'
+    const html = `<p>You asked to change the email on your Plot-Twist account.</p><p><a href="${verificationUrl}">Tap here to confirm this is really you</a> and we will swap it over.</p><p>This link expires in 1 hour. If you did not request this, you can ignore the message and nothing changes.</p>`
+    const text = `You asked to change the email on your Plot-Twist account. Confirm at: ${verificationUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore the message and nothing changes.`
+
+    await this.send({ to: toEmail, subject, html, text })
+  }
 }

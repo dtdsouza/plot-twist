@@ -1,15 +1,34 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common'
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
 import { AuthService } from '../../core/auth.service'
+import {
+  EmailChangeService,
+  type IEmailChangeVerifyResult,
+} from '../../core/email-change.service'
 import { RegisterDto } from '../dto/register.dto'
 import { LoginDto } from '../dto/login.dto'
 import { ForgotPasswordDto } from '../dto/forgot-password.dto'
 import { ResetPasswordDto } from '../dto/reset-password.dto'
+import { ChangePasswordDto } from '../dto/change-password.dto'
+import { VerifyEmailChangeDto } from '../dto/verify-email-change.dto'
 import { IAuthResponse } from '../dto/auth-response.interface'
+import { JwtAuthGuard } from '../guard/jwt-auth.guard'
+import { CurrentUser } from '../decorator/current-user.decorator'
+import type { IJwtPayload } from '../dto/jwt-payload.interface'
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly emailChangeService: EmailChangeService,
+  ) {}
 
   @Post('register')
   async register(@Body() dto: RegisterDto): Promise<IAuthResponse> {
@@ -48,5 +67,24 @@ export class AuthController {
       message:
         'Password has been reset successfully. Please log in with your new password.',
     }
+  }
+
+  @Post('verify-email-change')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmailChange(
+    @Body() dto: VerifyEmailChangeDto,
+  ): Promise<IEmailChangeVerifyResult> {
+    return this.emailChangeService.verify(dto.token)
+  }
+
+  // Rate limiting deferred -- consider Throttle decorator here in the future
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @CurrentUser() current: IJwtPayload,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return this.authService.changePassword(current.sub, dto)
   }
 }
