@@ -7,7 +7,10 @@ set -euo pipefail
 
 BUCKET="${S3_BUCKET_AVATARS:-plot-twist-avatars}"
 REGION="${DEFAULT_REGION:-us-east-1}"
-WEB_ORIGIN="${WEB_ORIGIN:-http://localhost:4200}"
+# Comma-separated list of allowed web origins for CORS.
+# Default covers both `nx serve web` (Next.js dev on :3000) and
+# `docker compose up web` (mapped to host :4200).
+WEB_ORIGINS="${WEB_ORIGINS:-http://localhost:3000,http://localhost:4200,http://127.0.0.1:3000,http://127.0.0.1:4200}"
 
 echo "[init] ensuring bucket s3://${BUCKET} in ${REGION}"
 
@@ -18,12 +21,18 @@ else
   echo "[init] bucket already exists"
 fi
 
-echo "[init] applying CORS for ${WEB_ORIGIN}"
+echo "[init] applying CORS for: ${WEB_ORIGINS}"
+ORIGINS_JSON=$(printf '%s' "${WEB_ORIGINS}" | awk -F',' '{
+  for (i = 1; i <= NF; i++) {
+    gsub(/^ +| +$/, "", $i)
+    printf "%s\"%s\"", (i==1 ? "" : ", "), $i
+  }
+}')
 awslocal s3api put-bucket-cors --bucket "${BUCKET}" --cors-configuration "$(cat <<JSON
 {
   "CORSRules": [
     {
-      "AllowedOrigins": ["${WEB_ORIGIN}"],
+      "AllowedOrigins": [${ORIGINS_JSON}],
       "AllowedMethods": ["GET", "POST", "PUT", "HEAD"],
       "AllowedHeaders": ["*"],
       "ExposeHeaders": ["ETag"],

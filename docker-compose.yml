@@ -28,7 +28,7 @@ services:
       AWS_SECRET_ACCESS_KEY: test
       PERSISTENCE: "1"
       S3_BUCKET_AVATARS: plot-twist-avatars
-      WEB_ORIGIN: http://localhost:4200
+      WEB_ORIGINS: http://localhost:3000,http://localhost:4200,http://127.0.0.1:3000,http://127.0.0.1:4200
     volumes:
       - localstack_data:/var/lib/localstack
       - ./infra/localstack/init.sh:/etc/localstack/init/ready.d/init.sh:ro
