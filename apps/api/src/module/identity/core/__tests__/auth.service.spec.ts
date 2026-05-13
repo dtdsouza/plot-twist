@@ -14,7 +14,7 @@ import { PasswordResetTokenEntity } from '../../persistence/entity/password-rese
 import { UserRepository } from '../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../persistence/repository/password-reset-token.repository'
 import { EUserStatus } from '../../persistence/enum/user-status.enum'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 import * as bcrypt from 'bcryptjs'
 import * as crypto from 'node:crypto'
 
@@ -48,7 +48,7 @@ describe('AuthService', () => {
   let mockJwtService: {
     sign: jest.Mock
   }
-  let mockEmailService: {
+  let mockEmailClient: {
     send: jest.Mock
   }
   let mockDataSource: {
@@ -89,7 +89,7 @@ describe('AuthService', () => {
       sign: jest.fn().mockReturnValue('mock-jwt-token'),
     }
 
-    mockEmailService = {
+    mockEmailClient = {
       send: jest.fn().mockResolvedValue(undefined),
     }
 
@@ -110,7 +110,7 @@ describe('AuthService', () => {
         { provide: PasswordResetTokenRepository, useValue: mockTokenRepository },
         { provide: JwtService, useValue: mockJwtService },
         { provide: DataSource, useValue: mockDataSource },
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()
@@ -119,7 +119,7 @@ describe('AuthService', () => {
 
     jest.clearAllMocks()
     mockJwtService.sign.mockReturnValue('mock-jwt-token')
-    mockEmailService.send.mockResolvedValue(undefined)
+    mockEmailClient.send.mockResolvedValue(undefined)
 
     // Setup crypto mocks
     mockHashDigest.mockReturnValue('hashed-token-hex')
@@ -329,7 +329,7 @@ describe('AuthService', () => {
       expect(mockCrypto.createHash).toHaveBeenCalledWith('sha256')
       expect(mockTokenRepository.deleteAllForUser).toHaveBeenCalledWith(mockUser.id)
       expect(mockTokenRepository.create).toHaveBeenCalled()
-      expect(mockEmailService.send).toHaveBeenCalledWith(
+      expect(mockEmailClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
           to: mockUser.email,
           subject: 'Reset your Plot-Twist password',
@@ -344,7 +344,7 @@ describe('AuthService', () => {
       // Act & Assert
       await expect(service.forgotPassword('unknown@example.com')).resolves.toBeUndefined()
       expect(mockTokenRepository.create).not.toHaveBeenCalled()
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should not generate token for INACTIVE user', async () => {
@@ -357,7 +357,7 @@ describe('AuthService', () => {
 
       // Assert
       expect(mockTokenRepository.create).not.toHaveBeenCalled()
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should not generate token for SUSPENDED user', async () => {
@@ -370,7 +370,7 @@ describe('AuthService', () => {
 
       // Assert
       expect(mockTokenRepository.create).not.toHaveBeenCalled()
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should invalidate previous tokens before creating new one', async () => {
@@ -413,7 +413,7 @@ describe('AuthService', () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(mockUser)
       mockTokenRepository.create.mockResolvedValue({})
-      mockEmailService.send.mockRejectedValue(new Error('Email send failed'))
+      mockEmailClient.send.mockRejectedValue(new Error('Email send failed'))
 
       // Act & Assert -- should not throw
       await expect(service.forgotPassword(mockUser.email)).resolves.toBeUndefined()
@@ -430,7 +430,7 @@ describe('AuthService', () => {
       await service.forgotPassword(mockUser.email)
 
       // Assert
-      const sentEmail = mockEmailService.send.mock.calls[0][0]
+      const sentEmail = mockEmailClient.send.mock.calls[0][0]
       expect(sentEmail.html).toContain('http://localhost:4200/reset-password?token=')
       expect(sentEmail.text).toContain('http://localhost:4200/reset-password?token=')
     })

@@ -4,7 +4,6 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
-  Inject,
   Logger,
 } from '@nestjs/common'
 import { DataSource } from 'typeorm'
@@ -22,8 +21,9 @@ import { LoginDto } from '../http/dto/login.dto'
 import { ChangePasswordDto } from '../http/dto/change-password.dto'
 import { IAuthResponse } from '../http/dto/auth-response.interface'
 import { toUserResponse } from '../http/dto/user-response.mapper'
-import { EMAIL_SERVICE, type IEmailService } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 import { MAIL_CONFIG_KEY, type IMailConfig } from '@module/shared/config'
+import { buildPasswordResetEmail } from '../mail/password-reset.template'
 
 const BCRYPT_SALT_ROUNDS = 12
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
@@ -38,8 +38,7 @@ export class AuthService {
     private readonly tokenRepository: PasswordResetTokenRepository,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
-    @Inject(EMAIL_SERVICE)
-    private readonly emailService: IEmailService,
+    private readonly emailClient: EmailClient,
     configService: ConfigService,
   ) {
     const mailConfig = configService.getOrThrow<IMailConfig>(MAIL_CONFIG_KEY)
@@ -114,12 +113,9 @@ export class AuthService {
     const resetUrl = `${this.passwordResetUrl}?token=${rawToken}`
 
     try {
-      await this.emailService.send({
-        to: user.email,
-        subject: 'Reset your Plot-Twist password',
-        html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset your password</a></p><p>This link expires in 1 hour.</p><p>If you did not request this, you can safely ignore this email.</p>`,
-        text: `You requested a password reset. Visit this link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you did not request this, you can safely ignore this email.`,
-      })
+      await this.emailClient.send(
+        buildPasswordResetEmail({ to: user.email, resetUrl }),
+      )
     } catch (error) {
       this.logger.error('Failed to send password reset email', error)
     }

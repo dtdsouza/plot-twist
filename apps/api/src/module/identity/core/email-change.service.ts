@@ -3,7 +3,6 @@ import {
   ConflictException,
   HttpException,
   HttpStatus,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -18,8 +17,9 @@ import { EmailChangeTokenEntity } from '../persistence/entity/email-change-token
 import { UserRepository } from '../persistence/repository/user.repository'
 import { EmailChangeTokenRepository } from '../persistence/repository/email-change-token.repository'
 import { EmailChangeInitiateDto } from '../http/dto/email-change-initiate.dto'
-import { EMAIL_SERVICE, type IEmailService } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 import { MAIL_CONFIG_KEY, type IMailConfig } from '@module/shared/config'
+import { buildEmailChangeVerificationEmail } from '../mail/email-change.template'
 
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
 
@@ -41,8 +41,7 @@ export class EmailChangeService {
     private readonly userRepository: UserRepository,
     private readonly tokenRepository: EmailChangeTokenRepository,
     private readonly dataSource: DataSource,
-    @Inject(EMAIL_SERVICE)
-    private readonly emailService: IEmailService,
+    private readonly emailClient: EmailClient,
     configService: ConfigService,
   ) {
     const mailConfig = configService.getOrThrow<IMailConfig>(MAIL_CONFIG_KEY)
@@ -102,9 +101,11 @@ export class EmailChangeService {
     const verificationUrl = `${this.verificationUrl}?token=${rawToken}`
 
     try {
-      await this.emailService.sendEmailChangeVerification(
-        dto.newEmail,
-        verificationUrl,
+      await this.emailClient.send(
+        buildEmailChangeVerificationEmail({
+          to: dto.newEmail,
+          verificationUrl,
+        }),
       )
     } catch (error) {
       this.logger.error('Failed to send email change verification', error)

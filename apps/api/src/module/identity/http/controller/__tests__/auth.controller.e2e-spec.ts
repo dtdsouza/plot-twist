@@ -17,7 +17,7 @@ import { UserRepository } from '../../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../../persistence/repository/password-reset-token.repository'
 import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { EUserStatus } from '../../../persistence/enum/user-status.enum'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)
@@ -29,9 +29,8 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication
   let dataSource: DataSource
   let module: TestingModule
-  let mockEmailService: {
+  let mockEmailClient: {
     send: jest.Mock
-    sendEmailChangeVerification: jest.Mock
   }
 
   beforeAll(async () => {
@@ -46,9 +45,8 @@ describe('AuthController (e2e)', () => {
     await pgClient.query('CREATE SCHEMA IF NOT EXISTS identity')
     await pgClient.end()
 
-    mockEmailService = {
+    mockEmailClient = {
       send: jest.fn().mockResolvedValue(undefined),
-      sendEmailChangeVerification: jest.fn().mockResolvedValue(undefined),
     }
 
     const mockConfigService = {
@@ -87,7 +85,7 @@ describe('AuthController (e2e)', () => {
         UserRepository,
         PasswordResetTokenRepository,
         EmailChangeTokenRepository,
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()
@@ -107,7 +105,7 @@ describe('AuthController (e2e)', () => {
   })
 
   beforeEach(async () => {
-    mockEmailService.send.mockClear()
+    mockEmailClient.send.mockClear()
     await dataSource.query(
       `DELETE FROM identity."password_reset_token" WHERE "userId" IN (SELECT id FROM identity."user" WHERE email LIKE $1)`,
       ['%@e2e.test'],
@@ -321,7 +319,7 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toContain(
         'If an account with that email exists',
       )
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should return 400 when email is invalid', async () => {

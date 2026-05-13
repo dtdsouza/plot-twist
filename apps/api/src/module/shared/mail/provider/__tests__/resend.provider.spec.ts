@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
-import { ResendEmailService } from '../resend-email.service'
+import { ResendEmailProvider } from '../resend.provider'
 import { MAIL_CONFIG_KEY } from '@module/shared/config'
 
 jest.mock('resend', () => {
@@ -16,8 +16,8 @@ jest.mock('resend', () => {
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Resend, __mockSend: mockSend } = require('resend')
 
-describe('ResendEmailService', () => {
-  let service: ResendEmailService
+describe('ResendEmailProvider', () => {
+  let provider: ResendEmailProvider
   let mockConfigService: {
     getOrThrow: jest.Mock
   }
@@ -38,12 +38,12 @@ describe('ResendEmailService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ResendEmailService,
+        ResendEmailProvider,
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()
 
-    service = module.get<ResendEmailService>(ResendEmailService)
+    provider = module.get<ResendEmailProvider>(ResendEmailProvider)
   })
 
   afterAll(() => {
@@ -51,7 +51,7 @@ describe('ResendEmailService', () => {
   })
 
   it('should be defined', () => {
-    expect(service).toBeDefined()
+    expect(provider).toBeDefined()
   })
 
   it('should create a Resend instance with the api key from config', () => {
@@ -72,7 +72,7 @@ describe('ResendEmailService', () => {
       mockSend.mockResolvedValue({ data: { id: 'email-123' }, error: null })
 
       // Act
-      await service.send(sendOptions)
+      await provider.send(sendOptions)
 
       // Assert
       expect(mockSend).toHaveBeenCalledWith({
@@ -93,7 +93,7 @@ describe('ResendEmailService', () => {
       }
 
       // Act
-      await service.send(optionsWithText)
+      await provider.send(optionsWithText)
 
       // Assert
       expect(mockSend).toHaveBeenCalledWith({
@@ -111,15 +111,15 @@ describe('ResendEmailService', () => {
       mockSend.mockResolvedValue({ data: null, error: resendError })
 
       // Act & Assert
-      await expect(service.send(sendOptions)).rejects.toEqual(resendError)
+      await expect(provider.send(sendOptions)).rejects.toEqual(resendError)
     })
 
-    it('should not throw when Resend SDK returns success', async () => {
+    it('should resolve when Resend SDK returns success', async () => {
       // Arrange
       mockSend.mockResolvedValue({ data: { id: 'email-789' }, error: null })
 
       // Act & Assert
-      await expect(service.send(sendOptions)).resolves.toBeUndefined()
+      await expect(provider.send(sendOptions)).resolves.toBeUndefined()
     })
   })
 })

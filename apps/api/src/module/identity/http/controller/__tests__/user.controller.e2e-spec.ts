@@ -18,7 +18,7 @@ import { UserRepository } from '../../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../../persistence/repository/password-reset-token.repository'
 import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)
@@ -52,9 +52,8 @@ describe('UserController (e2e)', () => {
     await pgClient.query('CREATE SCHEMA IF NOT EXISTS identity')
     await pgClient.end()
 
-    const mockEmailService = {
+    const mockEmailClient = {
       send: jest.fn().mockResolvedValue(undefined),
-      sendEmailChangeVerification: jest.fn().mockResolvedValue(undefined),
     }
     const mockConfigService = {
       getOrThrow: jest.fn().mockReturnValue({
@@ -94,7 +93,7 @@ describe('UserController (e2e)', () => {
         UserRepository,
         PasswordResetTokenRepository,
         EmailChangeTokenRepository,
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()

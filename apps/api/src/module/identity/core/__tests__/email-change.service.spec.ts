@@ -16,7 +16,7 @@ import { EmailChangeTokenEntity } from '../../persistence/entity/email-change-to
 import { UserRepository } from '../../persistence/repository/user.repository'
 import { EmailChangeTokenRepository } from '../../persistence/repository/email-change-token.repository'
 import { EUserStatus } from '../../persistence/enum/user-status.enum'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 
 jest.mock('bcryptjs')
 jest.mock('node:crypto', () => {
@@ -45,9 +45,8 @@ describe('EmailChangeService', () => {
     create: jest.Mock
     deleteAllForUser: jest.Mock
   }
-  let mockEmailService: {
+  let mockEmailClient: {
     send: jest.Mock
-    sendEmailChangeVerification: jest.Mock
   }
   let mockDataSource: {
     transaction: jest.Mock
@@ -83,9 +82,8 @@ describe('EmailChangeService', () => {
       deleteAllForUser: jest.fn(),
     }
 
-    mockEmailService = {
+    mockEmailClient = {
       send: jest.fn().mockResolvedValue(undefined),
-      sendEmailChangeVerification: jest.fn().mockResolvedValue(undefined),
     }
 
     mockDataSource = {
@@ -104,7 +102,7 @@ describe('EmailChangeService', () => {
         { provide: UserRepository, useValue: mockUserRepository },
         { provide: EmailChangeTokenRepository, useValue: mockTokenRepository },
         { provide: DataSource, useValue: mockDataSource },
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()
@@ -114,7 +112,7 @@ describe('EmailChangeService', () => {
     jest.clearAllMocks()
 
     // Re-prime mailer mock after clearAllMocks
-    mockEmailService.sendEmailChangeVerification.mockResolvedValue(undefined)
+    mockEmailClient.send.mockResolvedValue(undefined)
 
     mockHashDigest.mockReturnValue('hashed-token-hex')
     mockHashUpdate.mockReturnValue({ digest: mockHashDigest })
@@ -159,9 +157,14 @@ describe('EmailChangeService', () => {
           newEmail: 'new@example.com',
         }),
       )
-      expect(mockEmailService.sendEmailChangeVerification).toHaveBeenCalledWith(
-        'new@example.com',
-        expect.stringContaining('http://localhost:4200/verify-email-change?token='),
+      expect(mockEmailClient.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'new@example.com',
+          subject: 'Verify your new Plot-Twist email',
+          html: expect.stringContaining(
+            'http://localhost:4200/verify-email-change?token=',
+          ),
+        }),
       )
     })
 
@@ -247,9 +250,7 @@ describe('EmailChangeService', () => {
         .mockResolvedValueOnce(null)
       mockBcrypt.compare.mockResolvedValue(true as never)
       mockTokenRepository.create.mockResolvedValue({} as never)
-      mockEmailService.sendEmailChangeVerification.mockRejectedValue(
-        new Error('Mailer down'),
-      )
+      mockEmailClient.send.mockRejectedValue(new Error('Mailer down'))
 
       // Act & Assert
       await expect(
