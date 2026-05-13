@@ -1,4 +1,5 @@
 import { ProfileForm } from '@/components/profile/profile-form';
+import { AvatarUpload } from '@/components/profile/avatar-upload';
 import styles from './page.module.css';
 
 export const metadata = {
@@ -12,6 +13,9 @@ export default function ProfilePage() {
         <h1 className={styles.title}>Profile</h1>
         <p className={styles.subtitle}>How you appear in clubs and discussions.</p>
       </header>
+      <section className={styles.avatarSection}>
+        <AvatarUpload />
+      </section>
       <ProfileForm />
     </div>
   );
