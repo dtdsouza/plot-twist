@@ -21,7 +21,8 @@
       "@module/shared/config": ["src/module/shared/config/index.ts"],
       "@module/shared/mail": ["src/module/shared/mail/index.ts"],
       "@module/shared/typeorm": ["src/module/shared/typeorm/index.ts"],
-      "@module/shared/persistence": ["src/module/shared/persistence/index.ts"]
+      "@module/shared/persistence": ["src/module/shared/persistence/index.ts"],
+      "@module/shared/storage": ["src/module/shared/storage/index.ts"]
     }
   },
   "include": [
