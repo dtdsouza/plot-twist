@@ -11,6 +11,7 @@ import { UserController } from '../user.controller'
 import { AuthService } from '../../../core/auth.service'
 import { UserService } from '../../../core/user.service'
 import { EmailChangeService } from '../../../core/email-change.service'
+import { AvatarService } from '../../../core/avatar.service'
 import { UserEntity } from '../../../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../../../persistence/entity/password-reset-token.entity'
 import { EmailChangeTokenEntity } from '../../../persistence/entity/email-change-token.entity'
@@ -89,6 +90,13 @@ describe('UserController (e2e)', () => {
         AuthService,
         UserService,
         EmailChangeService,
+        {
+          provide: AvatarService,
+          useValue: {
+            initiateUpload: jest.fn(),
+            finalize: jest.fn(),
+          },
+        },
         JwtAuthGuard,
         UserRepository,
         PasswordResetTokenRepository,

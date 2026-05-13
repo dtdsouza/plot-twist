@@ -16,6 +16,8 @@ import { PasswordResetTokenRepository } from "./persistence/repository/password-
 import { EmailChangeTokenRepository } from "./persistence/repository/email-change-token.repository";
 import { type IJwtConfig } from "@module/shared/config";
 import { MailModule } from "@module/shared/mail";
+import { StorageModule } from "@module/shared/storage";
+import { AvatarService } from "./core/avatar.service";
 
 @Module({
   imports: [
@@ -36,12 +38,14 @@ import { MailModule } from "@module/shared/mail";
       },
     }),
     MailModule,
+    StorageModule,
   ],
   controllers: [AuthController, UserController],
   providers: [
     AuthService,
     UserService,
     EmailChangeService,
+    AvatarService,
     JwtAuthGuard,
     UserRepository,
     PasswordResetTokenRepository,
