@@ -1,7 +1,7 @@
 ---
 title: "feat: Avatar Image Upload via S3 Presigned POST"
 type: feat
-status: active
+status: completed
 date: 2026-05-13
 ---
 
@@ -180,7 +180,7 @@ Exported public API (from `index.ts`): `StorageModule`, `StorageClient`, types f
 
 ## Implementation Units
 
-- [ ] **Unit 1: Add `module/shared/storage` generic storage module**
+- [x] **Unit 1: Add `module/shared/storage` generic storage module**
 
 **Goal:** Provide a generic, replaceable S3 client for the rest of the API. No domain knowledge inside.
 
@@ -229,7 +229,7 @@ Exported public API (from `index.ts`): `StorageModule`, `StorageClient`, types f
 
 ---
 
-- [ ] **Unit 2: Wire config + LocalStack into the dev environment**
+- [x] **Unit 2: Wire config + LocalStack into the dev environment**
 
 **Goal:** Add all storage-related env vars, fail-fast on missing values, and bring up an S3-compatible bucket in local dev with a single `docker compose up`.
 
@@ -282,7 +282,7 @@ Exported public API (from `index.ts`): `StorageModule`, `StorageClient`, types f
 
 ---
 
-- [ ] **Unit 3: Add avatar endpoints + service in `module/identity`**
+- [x] **Unit 3: Add avatar endpoints + service in `module/identity`**
 
 **Goal:** Two new authenticated endpoints (`upload-intent`, `finalize`) plus an `AvatarService` that owns every avatar-specific business rule (key prefixes, validation thresholds, lifecycle commit). No S3 SDK appears anywhere in this module.
 
@@ -348,7 +348,7 @@ Exported public API (from `index.ts`): `StorageModule`, `StorageClient`, types f
 
 ---
 
-- [ ] **Unit 4: Frontend avatar upload UI + Next.js API proxy routes**
+- [x] **Unit 4: Frontend avatar upload UI + Next.js API proxy routes**
 
 **Goal:** A profile-page component where the user picks a file, watches a progress indicator, and sees the new avatar appear on success. Two thin Next.js route handlers proxy the API calls (mirroring the existing `me` pattern).
 
@@ -398,7 +398,7 @@ Exported public API (from `index.ts`): `StorageModule`, `StorageClient`, types f
 
 ---
 
-- [ ] **Unit 5: Documentation + ADR**
+- [x] **Unit 5: Documentation + ADR**
 
 **Goal:** Capture the architectural decision and update operator docs.
 

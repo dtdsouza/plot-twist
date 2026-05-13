@@ -34,7 +34,8 @@ plot-twist/
 │   │               ├── config/       # Centralized env config (Zod-validated)
 │   │               ├── mail/         # Resend email service
 │   │               ├── typeorm/      # BaseEntity, BaseRepository, TypeormPersistenceModule
-│   │               └── persistence/  # DataSourceOptions builder + PersistenceModule
+│   │               ├── persistence/  # DataSourceOptions builder + PersistenceModule
+│   │               └── storage/      # Generic S3 storage client (presigned POST, HEAD, copy, delete)
 │   └── web/                          # Next.js frontend
 ├── docs/                             # Architecture docs
 │   ├── adr/                          # Architecture Decision Records
@@ -55,7 +56,7 @@ All NestJS modules live under `apps/api/src/module/`. There are three kinds:
 |------|----------|---------|
 | Orchestrator | `module/app/` | Root `AppModule`; composes domain + shared modules |
 | Domain | `module/{domain}/` (e.g., `identity/`) | A bounded context with its own schema |
-| Shared | `module/shared/{concern}/` | Cross-cutting support (config, mail, typeorm, persistence) |
+| Shared | `module/shared/{concern}/` | Cross-cutting support (config, mail, typeorm, persistence, storage) |
 
 Each domain module follows this internal layout:
 
@@ -87,6 +88,7 @@ Cross-module imports must use `@module/*` path aliases and resolve to a public-A
 | `@module/shared/mail` | `src/module/shared/mail/index.ts` |
 | `@module/shared/typeorm` | `src/module/shared/typeorm/index.ts` |
 | `@module/shared/persistence` | `src/module/shared/persistence/index.ts` |
+| `@module/shared/storage` | `src/module/shared/storage/index.ts` |
 
 Allowed dependency directions (enforced by dependency-cruiser):
 
@@ -168,8 +170,8 @@ Example: `feat(identity): add forgot password flow`
 ## Common Commands
 
 ```bash
-# Database
-docker compose up postgres -d                      # Start PostgreSQL
+# Infra
+docker compose up postgres localstack -d           # Postgres + LocalStack (S3 emulator on :4566)
 
 # Serve apps
 pnpm nx serve api                                  # Backend on localhost:3333
@@ -184,7 +186,10 @@ pnpm nx run-many --target=build --all
 pnpm nx typecheck api
 
 # Test
-pnpm nx test api                                   # Run all tests via Nx
+pnpm nx test api                                   # Unit + int (default)
+pnpm nx test api --configuration=unit              # Unit only
+pnpm nx test api --configuration=int               # Integration only
+pnpm nx test:e2e api                               # E2E suite (requires postgres + localstack up)
 pnpm nx test web
 pnpm nx run-many --target=test --all
 
@@ -205,4 +210,5 @@ See `apps/api/.env.example` for the full list. Key groups:
 
 - **Database:** `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `DB_SYNCHRONIZE`, `DB_LOGGING`
 - **Identity:** `JWT_SECRET`, `JWT_EXPIRES_IN`
-- **Mail:** `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `PASSWORD_RESET_URL`
+- **Mail:** `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `PASSWORD_RESET_URL`, `EMAIL_CHANGE_VERIFICATION_URL`
+- **Storage / S3:** `S3_REGION`, `S3_ENDPOINT` (local: LocalStack), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_AVATARS`, `S3_PUBLIC_URL_BASE`, `MAX_AVATAR_SIZE_BYTES`, `MAX_AVATAR_DIMENSION`, `AVATAR_ALLOWED_MIME`, `PRESIGNED_POST_TTL_SECONDS`
