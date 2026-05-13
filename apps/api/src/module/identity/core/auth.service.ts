@@ -3,7 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
-  Inject,
+  NotFoundException,
   Logger,
 } from '@nestjs/common'
 import { DataSource } from 'typeorm'
@@ -18,10 +18,12 @@ import { PasswordResetTokenRepository } from '../persistence/repository/password
 import { EUserStatus } from '../persistence/enum/user-status.enum'
 import { RegisterDto } from '../http/dto/register.dto'
 import { LoginDto } from '../http/dto/login.dto'
+import { ChangePasswordDto } from '../http/dto/change-password.dto'
 import { IAuthResponse } from '../http/dto/auth-response.interface'
 import { toUserResponse } from '../http/dto/user-response.mapper'
-import { EMAIL_SERVICE, type IEmailService } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 import { MAIL_CONFIG_KEY, type IMailConfig } from '@module/shared/config'
+import { buildPasswordResetEmail } from '../mail/password-reset.template'
 
 const BCRYPT_SALT_ROUNDS = 12
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
@@ -36,8 +38,7 @@ export class AuthService {
     private readonly tokenRepository: PasswordResetTokenRepository,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
-    @Inject(EMAIL_SERVICE)
-    private readonly emailService: IEmailService,
+    private readonly emailClient: EmailClient,
     configService: ConfigService,
   ) {
     const mailConfig = configService.getOrThrow<IMailConfig>(MAIL_CONFIG_KEY)
@@ -112,12 +113,9 @@ export class AuthService {
     const resetUrl = `${this.passwordResetUrl}?token=${rawToken}`
 
     try {
-      await this.emailService.send({
-        to: user.email,
-        subject: 'Reset your Plot-Twist password',
-        html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset your password</a></p><p>This link expires in 1 hour.</p><p>If you did not request this, you can safely ignore this email.</p>`,
-        text: `You requested a password reset. Visit this link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you did not request this, you can safely ignore this email.`,
-      })
+      await this.emailClient.send(
+        buildPasswordResetEmail({ to: user.email, resetUrl }),
+      )
     } catch (error) {
       this.logger.error('Failed to send password reset email', error)
     }
@@ -153,6 +151,36 @@ export class AuthService {
     })
 
     this.logger.log(`Password reset successful for user: ${user.id}`)
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    // Rate limiting deferred -- consider Throttle decorator at controller layer in the future
+    const user = await this.userRepository.findOne({ id: userId })
+
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    )
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password incorrect')
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_SALT_ROUNDS)
+
+    await this.userRepository.update(user.id, { passwordHash })
+
+    // JWT invalidation deferred -- existing tokens remain valid until expiry
+    this.logger.log(`Password changed for user: ${user.id}`)
+
+    return { message: 'Password updated' }
   }
 
   private buildAuthResponse(user: UserEntity): IAuthResponse {

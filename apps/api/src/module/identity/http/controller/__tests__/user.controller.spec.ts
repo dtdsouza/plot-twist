@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { NotFoundException } from '@nestjs/common'
 import { UserController } from '../user.controller'
 import { UserService } from '../../../core/user.service'
+import { EmailChangeService } from '../../../core/email-change.service'
 import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
 import { IUserResponse } from '../../dto/auth-response.interface'
 import { IJwtPayload } from '../../dto/jwt-payload.interface'
@@ -9,6 +10,7 @@ import { IJwtPayload } from '../../dto/jwt-payload.interface'
 describe('UserController', () => {
   let controller: UserController
   let mockUserService: { findById: jest.Mock }
+  let mockEmailChangeService: { initiate: jest.Mock }
 
   const mockUserResponse: IUserResponse = {
     id: 'uuid-123',
@@ -28,10 +30,16 @@ describe('UserController', () => {
     mockUserService = {
       findById: jest.fn().mockResolvedValue(mockUserResponse),
     }
+    mockEmailChangeService = {
+      initiate: jest.fn().mockResolvedValue({ message: 'Check your new inbox' }),
+    }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [{ provide: UserService, useValue: mockUserService }],
+      providers: [
+        { provide: UserService, useValue: mockUserService },
+        { provide: EmailChangeService, useValue: mockEmailChangeService },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -52,6 +60,26 @@ describe('UserController', () => {
       // Assert
       expect(mockUserService.findById).toHaveBeenCalledWith(mockCurrentUser.sub)
       expect(result).toEqual(mockUserResponse)
+    })
+  })
+
+  describe('initiateEmailChange', () => {
+    it('delegates to the email-change service using the JWT subject', async () => {
+      // Arrange
+      const dto = {
+        currentPassword: 'pw123',
+        newEmail: 'new@example.com',
+      }
+
+      // Act
+      const result = await controller.initiateEmailChange(mockCurrentUser, dto as never)
+
+      // Assert
+      expect(mockEmailChangeService.initiate).toHaveBeenCalledWith(
+        mockCurrentUser.sub,
+        dto,
+      )
+      expect(result).toEqual({ message: 'Check your new inbox' })
     })
   })
 

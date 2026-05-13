@@ -13,6 +13,7 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
+  setupFiles: ['<rootDir>/src/test-setup.ts'],
   testMatch: ['**/__tests__/**/*.spec.ts', '**/__tests__/**/*.int-spec.ts', '**/__tests__/**/*.e2e-spec.ts'],
   coverageDirectory: '../../coverage/apps/api',
   collectCoverageFrom: [

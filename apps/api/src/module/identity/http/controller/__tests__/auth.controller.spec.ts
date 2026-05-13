@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common'
 import { AuthController } from '../auth.controller'
 import { AuthService } from '../../../core/auth.service'
+import { EmailChangeService } from '../../../core/email-change.service'
+import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
 import { IAuthResponse } from '../../dto/auth-response.interface'
 
 describe('AuthController', () => {
@@ -11,6 +13,10 @@ describe('AuthController', () => {
     login: jest.Mock
     forgotPassword: jest.Mock
     resetPassword: jest.Mock
+    changePassword: jest.Mock
+  }
+  let mockEmailChangeService: {
+    verify: jest.Mock
   }
 
   const mockAuthResponse: IAuthResponse = {
@@ -31,14 +37,24 @@ describe('AuthController', () => {
       login: jest.fn().mockResolvedValue(mockAuthResponse),
       forgotPassword: jest.fn().mockResolvedValue(undefined),
       resetPassword: jest.fn().mockResolvedValue(undefined),
+      changePassword: jest.fn().mockResolvedValue({ message: 'Password updated' }),
+    }
+    mockEmailChangeService = {
+      verify: jest
+        .fn()
+        .mockResolvedValue({ message: 'Email updated', email: 'new@example.com' }),
     }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
+        { provide: EmailChangeService, useValue: mockEmailChangeService },
       ],
-    }).compile()
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     controller = module.get<AuthController>(AuthController)
   })
@@ -128,6 +144,33 @@ describe('AuthController', () => {
       // Act & Assert
       await expect(controller.resetPassword(dto as any)).rejects.toThrow(
         BadRequestException,
+      )
+    })
+  })
+
+  describe('verifyEmailChange', () => {
+    it('delegates to emailChangeService.verify with the raw token', async () => {
+      // Arrange
+      const dto = { token: 'raw-token' }
+
+      // Act
+      const result = await controller.verifyEmailChange(dto as any)
+
+      // Assert
+      expect(mockEmailChangeService.verify).toHaveBeenCalledWith('raw-token')
+      expect(result).toEqual({ message: 'Email updated', email: 'new@example.com' })
+    })
+
+    it('propagates 410 HttpException from service', async () => {
+      // Arrange
+      const dto = { token: 'expired-token' }
+      mockEmailChangeService.verify.mockRejectedValue(
+        new HttpException('Link expired or invalid', HttpStatus.GONE),
+      )
+
+      // Act & Assert
+      await expect(controller.verifyEmailChange(dto as any)).rejects.toThrow(
+        HttpException,
       )
     })
   })

@@ -16,7 +16,7 @@ import { UserEntity } from '../../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../../persistence/entity/password-reset-token.entity'
 import { UserRepository } from '../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../persistence/repository/password-reset-token.repository'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)
@@ -28,7 +28,7 @@ describe('AuthService (integration)', () => {
   let service: AuthService
   let dataSource: DataSource
   let module: TestingModule
-  let mockEmailService: { send: jest.Mock }
+  let mockEmailClient: { send: jest.Mock }
 
   beforeAll(async () => {
     // Create the identity schema before TypeORM synchronize runs
@@ -43,7 +43,7 @@ describe('AuthService (integration)', () => {
     await pgClient.query('CREATE SCHEMA IF NOT EXISTS identity')
     await pgClient.end()
 
-    mockEmailService = { send: jest.fn().mockResolvedValue(undefined) }
+    mockEmailClient = { send: jest.fn().mockResolvedValue(undefined) }
 
     const mockConfigService = {
       getOrThrow: jest.fn().mockReturnValue({
@@ -73,7 +73,7 @@ describe('AuthService (integration)', () => {
         AuthService,
         UserRepository,
         PasswordResetTokenRepository,
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()
@@ -83,7 +83,7 @@ describe('AuthService (integration)', () => {
   })
 
   beforeEach(async () => {
-    mockEmailService.send.mockClear()
+    mockEmailClient.send.mockClear()
     await dataSource.query(
       `DELETE FROM identity."password_reset_token" WHERE "userId" IN (SELECT id FROM identity."user" WHERE email LIKE $1)`,
       ['%@int.test'],
@@ -260,7 +260,7 @@ describe('AuthService (integration)', () => {
       await service.forgotPassword(dto.email)
 
       // Assert
-      expect(mockEmailService.send).toHaveBeenCalledWith(
+      expect(mockEmailClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
           to: dto.email,
           subject: 'Reset your Plot-Twist password',

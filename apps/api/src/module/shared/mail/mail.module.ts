@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common'
-import { ResendEmailService } from './resend-email.service'
-import { EMAIL_SERVICE } from './interface/email-service.interface'
+import { EmailClient } from './client/email.client'
+import { EMAIL_PROVIDER } from './provider/email-provider.interface'
+import { ResendEmailProvider } from './provider/resend.provider'
 
 @Module({
   providers: [
     {
-      provide: EMAIL_SERVICE,
-      useClass: ResendEmailService,
+      provide: EMAIL_PROVIDER,
+      useClass: ResendEmailProvider,
     },
+    EmailClient,
   ],
-  exports: [EMAIL_SERVICE],
+  exports: [EmailClient],
 })
 export class MailModule {}

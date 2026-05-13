@@ -26,4 +26,8 @@ export const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   RESEND_FROM_ADDRESS: z.string().min(1).default('Plot-Twist <onboarding@resend.dev>'),
   PASSWORD_RESET_URL: z.string().url().default('http://localhost:4200/reset-password'),
+  EMAIL_CHANGE_VERIFICATION_URL: z
+    .string()
+    .url()
+    .default('http://localhost:4200/verify-email-change'),
 })

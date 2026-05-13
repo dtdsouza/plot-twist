@@ -5,6 +5,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AuthService } from '../auth.service'
@@ -13,7 +14,7 @@ import { PasswordResetTokenEntity } from '../../persistence/entity/password-rese
 import { UserRepository } from '../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../persistence/repository/password-reset-token.repository'
 import { EUserStatus } from '../../persistence/enum/user-status.enum'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 import * as bcrypt from 'bcryptjs'
 import * as crypto from 'node:crypto'
 
@@ -47,7 +48,7 @@ describe('AuthService', () => {
   let mockJwtService: {
     sign: jest.Mock
   }
-  let mockEmailService: {
+  let mockEmailClient: {
     send: jest.Mock
   }
   let mockDataSource: {
@@ -88,7 +89,7 @@ describe('AuthService', () => {
       sign: jest.fn().mockReturnValue('mock-jwt-token'),
     }
 
-    mockEmailService = {
+    mockEmailClient = {
       send: jest.fn().mockResolvedValue(undefined),
     }
 
@@ -109,7 +110,7 @@ describe('AuthService', () => {
         { provide: PasswordResetTokenRepository, useValue: mockTokenRepository },
         { provide: JwtService, useValue: mockJwtService },
         { provide: DataSource, useValue: mockDataSource },
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()
@@ -118,7 +119,7 @@ describe('AuthService', () => {
 
     jest.clearAllMocks()
     mockJwtService.sign.mockReturnValue('mock-jwt-token')
-    mockEmailService.send.mockResolvedValue(undefined)
+    mockEmailClient.send.mockResolvedValue(undefined)
 
     // Setup crypto mocks
     mockHashDigest.mockReturnValue('hashed-token-hex')
@@ -328,7 +329,7 @@ describe('AuthService', () => {
       expect(mockCrypto.createHash).toHaveBeenCalledWith('sha256')
       expect(mockTokenRepository.deleteAllForUser).toHaveBeenCalledWith(mockUser.id)
       expect(mockTokenRepository.create).toHaveBeenCalled()
-      expect(mockEmailService.send).toHaveBeenCalledWith(
+      expect(mockEmailClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
           to: mockUser.email,
           subject: 'Reset your Plot-Twist password',
@@ -343,7 +344,7 @@ describe('AuthService', () => {
       // Act & Assert
       await expect(service.forgotPassword('unknown@example.com')).resolves.toBeUndefined()
       expect(mockTokenRepository.create).not.toHaveBeenCalled()
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should not generate token for INACTIVE user', async () => {
@@ -356,7 +357,7 @@ describe('AuthService', () => {
 
       // Assert
       expect(mockTokenRepository.create).not.toHaveBeenCalled()
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should not generate token for SUSPENDED user', async () => {
@@ -369,7 +370,7 @@ describe('AuthService', () => {
 
       // Assert
       expect(mockTokenRepository.create).not.toHaveBeenCalled()
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should invalidate previous tokens before creating new one', async () => {
@@ -412,7 +413,7 @@ describe('AuthService', () => {
       // Arrange
       mockUserRepository.findOne.mockResolvedValue(mockUser)
       mockTokenRepository.create.mockResolvedValue({})
-      mockEmailService.send.mockRejectedValue(new Error('Email send failed'))
+      mockEmailClient.send.mockRejectedValue(new Error('Email send failed'))
 
       // Act & Assert -- should not throw
       await expect(service.forgotPassword(mockUser.email)).resolves.toBeUndefined()
@@ -429,7 +430,7 @@ describe('AuthService', () => {
       await service.forgotPassword(mockUser.email)
 
       // Assert
-      const sentEmail = mockEmailService.send.mock.calls[0][0]
+      const sentEmail = mockEmailClient.send.mock.calls[0][0]
       expect(sentEmail.html).toContain('http://localhost:4200/reset-password?token=')
       expect(sentEmail.text).toContain('http://localhost:4200/reset-password?token=')
     })
@@ -551,6 +552,89 @@ describe('AuthService', () => {
 
       // Assert
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('changePassword', () => {
+    const changePasswordDto = {
+      currentPassword: 'oldPassword123',
+      newPassword: 'newPassword456',
+    }
+
+    it('should update password hash and return success message on valid current password', async () => {
+      // Arrange
+      mockUserRepository.findOne.mockResolvedValue(mockUser)
+      mockBcrypt.compare.mockResolvedValue(true as never)
+      mockBcrypt.hash.mockResolvedValue('new-hashed-password' as never)
+      mockUserRepository.update.mockResolvedValue({
+        ...mockUser,
+        passwordHash: 'new-hashed-password',
+      })
+
+      // Act
+      const result = await service.changePassword(mockUser.id, changePasswordDto)
+
+      // Assert
+      expect(result).toEqual({ message: 'Password updated' })
+      expect(mockBcrypt.compare).toHaveBeenCalledWith(
+        'oldPassword123',
+        mockUser.passwordHash,
+      )
+      expect(mockBcrypt.hash).toHaveBeenCalledWith('newPassword456', 12)
+      expect(mockUserRepository.update).toHaveBeenCalledWith(mockUser.id, {
+        passwordHash: 'new-hashed-password',
+      })
+    })
+
+    it('should throw UnauthorizedException when current password is wrong', async () => {
+      // Arrange
+      mockUserRepository.findOne.mockResolvedValue(mockUser)
+      mockBcrypt.compare.mockResolvedValue(false as never)
+
+      // Act & Assert
+      await expect(
+        service.changePassword(mockUser.id, changePasswordDto),
+      ).rejects.toThrow(UnauthorizedException)
+      await expect(
+        service.changePassword(mockUser.id, changePasswordDto),
+      ).rejects.toThrow('Current password incorrect')
+      expect(mockUserRepository.update).not.toHaveBeenCalled()
+    })
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      // Arrange
+      mockUserRepository.findOne.mockResolvedValue(null)
+
+      // Act & Assert
+      await expect(
+        service.changePassword('missing-user-id', changePasswordDto),
+      ).rejects.toThrow(NotFoundException)
+      expect(mockBcrypt.compare).not.toHaveBeenCalled()
+      expect(mockUserRepository.update).not.toHaveBeenCalled()
+    })
+
+    it('should allow new password identical to current password', async () => {
+      // Arrange
+      const sameDto = {
+        currentPassword: 'samePassword123',
+        newPassword: 'samePassword123',
+      }
+      mockUserRepository.findOne.mockResolvedValue(mockUser)
+      mockBcrypt.compare.mockResolvedValue(true as never)
+      mockBcrypt.hash.mockResolvedValue('re-hashed-same-password' as never)
+      mockUserRepository.update.mockResolvedValue({
+        ...mockUser,
+        passwordHash: 're-hashed-same-password',
+      })
+
+      // Act
+      const result = await service.changePassword(mockUser.id, sameDto)
+
+      // Assert
+      expect(result).toEqual({ message: 'Password updated' })
+      expect(mockUserRepository.update).toHaveBeenCalledWith(mockUser.id, {
+        passwordHash: 're-hashed-same-password',
+      })
     })
   })
 })

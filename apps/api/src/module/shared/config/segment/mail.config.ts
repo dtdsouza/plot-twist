@@ -6,6 +6,7 @@ export interface IMailConfig {
   readonly apiKey: string
   readonly fromAddress: string
   readonly passwordResetUrl: string
+  readonly emailChangeVerificationUrl: string
 }
 
 export const mailConfig = registerAs(MAIL_CONFIG_KEY, (): IMailConfig => {
@@ -13,5 +14,6 @@ export const mailConfig = registerAs(MAIL_CONFIG_KEY, (): IMailConfig => {
     apiKey: process.env.RESEND_API_KEY as string,
     fromAddress: process.env.RESEND_FROM_ADDRESS as string,
     passwordResetUrl: process.env.PASSWORD_RESET_URL as string,
+    emailChangeVerificationUrl: process.env.EMAIL_CHANGE_VERIFICATION_URL as string,
   })
 })

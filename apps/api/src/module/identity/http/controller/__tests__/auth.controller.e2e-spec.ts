@@ -9,12 +9,15 @@ import { DataSource } from 'typeorm'
 import { Client } from 'pg'
 import { AuthController } from '../auth.controller'
 import { AuthService } from '../../../core/auth.service'
+import { EmailChangeService } from '../../../core/email-change.service'
 import { UserEntity } from '../../../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../../../persistence/entity/password-reset-token.entity'
+import { EmailChangeTokenEntity } from '../../../persistence/entity/email-change-token.entity'
 import { UserRepository } from '../../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../../persistence/repository/password-reset-token.repository'
+import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { EUserStatus } from '../../../persistence/enum/user-status.enum'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)
@@ -26,7 +29,9 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication
   let dataSource: DataSource
   let module: TestingModule
-  let mockEmailService: { send: jest.Mock }
+  let mockEmailClient: {
+    send: jest.Mock
+  }
 
   beforeAll(async () => {
     const pgClient = new Client({
@@ -40,11 +45,14 @@ describe('AuthController (e2e)', () => {
     await pgClient.query('CREATE SCHEMA IF NOT EXISTS identity')
     await pgClient.end()
 
-    mockEmailService = { send: jest.fn().mockResolvedValue(undefined) }
+    mockEmailClient = {
+      send: jest.fn().mockResolvedValue(undefined),
+    }
 
     const mockConfigService = {
       getOrThrow: jest.fn().mockReturnValue({
         passwordResetUrl: 'http://localhost:4200/reset-password',
+        emailChangeVerificationUrl: 'http://localhost:4200/verify-email-change',
       }),
     }
 
@@ -57,10 +65,14 @@ describe('AuthController (e2e)', () => {
           username: DB_USERNAME,
           password: DB_PASSWORD,
           database: DB_NAME,
-          entities: [UserEntity, PasswordResetTokenEntity],
+          entities: [UserEntity, PasswordResetTokenEntity, EmailChangeTokenEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([UserEntity, PasswordResetTokenEntity]),
+        TypeOrmModule.forFeature([
+          UserEntity,
+          PasswordResetTokenEntity,
+          EmailChangeTokenEntity,
+        ]),
         JwtModule.register({
           secret: 'test-secret',
           signOptions: { expiresIn: '1h' },
@@ -69,9 +81,11 @@ describe('AuthController (e2e)', () => {
       controllers: [AuthController],
       providers: [
         AuthService,
+        EmailChangeService,
         UserRepository,
         PasswordResetTokenRepository,
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        EmailChangeTokenRepository,
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()
@@ -91,7 +105,7 @@ describe('AuthController (e2e)', () => {
   })
 
   beforeEach(async () => {
-    mockEmailService.send.mockClear()
+    mockEmailClient.send.mockClear()
     await dataSource.query(
       `DELETE FROM identity."password_reset_token" WHERE "userId" IN (SELECT id FROM identity."user" WHERE email LIKE $1)`,
       ['%@e2e.test'],
@@ -305,7 +319,7 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toContain(
         'If an account with that email exists',
       )
-      expect(mockEmailService.send).not.toHaveBeenCalled()
+      expect(mockEmailClient.send).not.toHaveBeenCalled()
     })
 
     it('should return 400 when email is invalid', async () => {

@@ -1,0 +1,22 @@
+.page {
+  max-width: 720px;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 44px;
+  color: var(--color-text);
+  margin: 12px 0 8px;
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--color-muted);
+  margin: 0;
+}

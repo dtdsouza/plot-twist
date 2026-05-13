@@ -10,12 +10,15 @@ import { AuthController } from '../auth.controller'
 import { UserController } from '../user.controller'
 import { AuthService } from '../../../core/auth.service'
 import { UserService } from '../../../core/user.service'
+import { EmailChangeService } from '../../../core/email-change.service'
 import { UserEntity } from '../../../persistence/entity/user.entity'
 import { PasswordResetTokenEntity } from '../../../persistence/entity/password-reset-token.entity'
+import { EmailChangeTokenEntity } from '../../../persistence/entity/email-change-token.entity'
 import { UserRepository } from '../../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../../persistence/repository/password-reset-token.repository'
+import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
-import { EMAIL_SERVICE } from '@module/shared/mail'
+import { EmailClient } from '@module/shared/mail'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)
@@ -49,10 +52,13 @@ describe('UserController (e2e)', () => {
     await pgClient.query('CREATE SCHEMA IF NOT EXISTS identity')
     await pgClient.end()
 
-    const mockEmailService = { send: jest.fn().mockResolvedValue(undefined) }
+    const mockEmailClient = {
+      send: jest.fn().mockResolvedValue(undefined),
+    }
     const mockConfigService = {
       getOrThrow: jest.fn().mockReturnValue({
         passwordResetUrl: 'http://localhost:4200/reset-password',
+        emailChangeVerificationUrl: 'http://localhost:4200/verify-email-change',
       }),
     }
 
@@ -65,10 +71,14 @@ describe('UserController (e2e)', () => {
           username: DB_USERNAME,
           password: DB_PASSWORD,
           database: DB_NAME,
-          entities: [UserEntity, PasswordResetTokenEntity],
+          entities: [UserEntity, PasswordResetTokenEntity, EmailChangeTokenEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([UserEntity, PasswordResetTokenEntity]),
+        TypeOrmModule.forFeature([
+          UserEntity,
+          PasswordResetTokenEntity,
+          EmailChangeTokenEntity,
+        ]),
         JwtModule.register({
           secret: 'test-secret',
           signOptions: { expiresIn: '1h' },
@@ -78,10 +88,12 @@ describe('UserController (e2e)', () => {
       providers: [
         AuthService,
         UserService,
+        EmailChangeService,
         JwtAuthGuard,
         UserRepository,
         PasswordResetTokenRepository,
-        { provide: EMAIL_SERVICE, useValue: mockEmailService },
+        EmailChangeTokenRepository,
+        { provide: EmailClient, useValue: mockEmailClient },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile()

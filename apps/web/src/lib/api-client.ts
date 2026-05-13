@@ -1,7 +1,11 @@
 import type {
+  IChangePasswordRequest,
+  IEmailChangeInitiateRequest,
   ILoginRequest,
   IRegisterRequest,
+  IUpdateProfileRequest,
   IUserResponse,
+  IVerifyEmailChangeRequest,
 } from './types/auth';
 
 class AuthApiError extends Error {
@@ -68,7 +72,14 @@ export async function getCurrentUser(): Promise<IUserResponse | null> {
   try {
     const response = await fetch('/api/auth/me', {
       credentials: 'same-origin',
+      cache: 'no-store',
     });
+
+    // 401 means no session; anything else (5xx) is transient — treat as no
+    // change to local state. Only true unauthorized clears the user.
+    if (response.status === 401) {
+      return null;
+    }
 
     if (!response.ok) {
       return null;
@@ -105,6 +116,58 @@ export async function resetPassword(data: {
   });
 
   return handleResponse<{ message: string }>(response);
+}
+
+export async function updateProfile(
+  data: IUpdateProfileRequest
+): Promise<IUserResponse> {
+  const response = await fetch('/api/user/me', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<IUserResponse>(response);
+}
+
+export async function changePassword(
+  data: IChangePasswordRequest
+): Promise<{ message: string }> {
+  const response = await fetch('/api/auth/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<{ message: string }>(response);
+}
+
+export async function initiateEmailChange(
+  data: IEmailChangeInitiateRequest
+): Promise<{ message: string }> {
+  const response = await fetch('/api/user/me/email-change', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<{ message: string }>(response);
+}
+
+export async function verifyEmailChange(
+  data: IVerifyEmailChangeRequest
+): Promise<{ message: string; email: string }> {
+  const response = await fetch('/api/auth/verify-email-change', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<{ message: string; email: string }>(response);
 }
 
 export { AuthApiError };

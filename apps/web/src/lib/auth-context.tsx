@@ -9,13 +9,19 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { IUserResponse, ILoginRequest, IRegisterRequest } from './types/auth';
+import type {
+  ILoginRequest,
+  IRegisterRequest,
+  IUpdateProfileRequest,
+  IUserResponse,
+} from './types/auth';
 import {
-  loginUser,
-  registerUser,
-  logoutUser,
-  getCurrentUser,
   AuthApiError,
+  getCurrentUser,
+  loginUser,
+  logoutUser,
+  registerUser,
+  updateProfile as updateProfileApi,
 } from './api-client';
 
 interface IAuthContextValue {
@@ -24,6 +30,8 @@ interface IAuthContextValue {
   readonly login: (data: ILoginRequest) => Promise<void>;
   readonly register: (data: IRegisterRequest) => Promise<void>;
   readonly logout: () => Promise<void>;
+  readonly updateProfile: (data: IUpdateProfileRequest) => Promise<IUserResponse>;
+  readonly refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<IAuthContextValue | null>(null);
@@ -63,8 +71,21 @@ export function AuthProvider({ children }: { readonly children: ReactNode }) {
     router.push('/login');
   }, [router]);
 
+  const updateProfile = useCallback(async (data: IUpdateProfileRequest) => {
+    const updated = await updateProfileApi(data);
+    setUser(updated);
+    return updated;
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const fresh = await getCurrentUser();
+    setUser(fresh);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, register, logout, updateProfile, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
