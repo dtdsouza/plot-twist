@@ -20,6 +20,8 @@ describe('ConfigModule', () => {
       JWT_SECRET: 'test-secret-long-enough-for-validation',
       JWT_EXPIRES_IN: '7d',
       RESEND_API_KEY: 're_test_placeholder',
+      AWS_ACCESS_KEY_ID: 'test',
+      AWS_SECRET_ACCESS_KEY: 'test',
     }
   })
 

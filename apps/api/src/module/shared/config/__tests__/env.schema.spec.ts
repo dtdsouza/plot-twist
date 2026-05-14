@@ -17,6 +17,8 @@ describe('envSchema', () => {
     RESEND_FROM_ADDRESS: 'Plot-Twist <onboarding@resend.dev>',
     PASSWORD_RESET_URL: 'http://localhost:4200/reset-password',
     EMAIL_CHANGE_VERIFICATION_URL: 'http://localhost:4200/verify-email-change',
+    AWS_ACCESS_KEY_ID: 'test',
+    AWS_SECRET_ACCESS_KEY: 'test',
   }
 
   it('should parse a fully valid env', () => {
@@ -40,6 +42,8 @@ describe('envSchema', () => {
     const minimal = {
       JWT_SECRET: 'a-secret-that-is-long-enough',
       RESEND_API_KEY: 're_test_api_key',
+      AWS_ACCESS_KEY_ID: 'test',
+      AWS_SECRET_ACCESS_KEY: 'test',
     }
 
     const result = envSchema.parse(minimal)
@@ -104,5 +108,42 @@ describe('envSchema', () => {
       const result = envSchema.parse({ ...validEnv, NODE_ENV: nodeEnv })
       expect(result.NODE_ENV).toBe(nodeEnv)
     }
+  })
+
+  it('should apply storage defaults when optional fields are omitted', () => {
+    const result = envSchema.parse(validEnv)
+
+    expect(result.S3_REGION).toBe('us-east-1')
+    expect(result.S3_BUCKET_AVATARS).toBe('plot-twist-avatars')
+    expect(result.MAX_AVATAR_SIZE_BYTES).toBe(2_097_152)
+    expect(result.MAX_AVATAR_DIMENSION).toBe(2048)
+    expect(result.AVATAR_ALLOWED_MIME).toBe('image/jpeg,image/png,image/webp')
+    expect(result.PRESIGNED_POST_TTL_SECONDS).toBe(300)
+  })
+
+  it('should reject missing AWS_ACCESS_KEY_ID', () => {
+    const withoutKey = { ...validEnv }
+    delete (withoutKey as Record<string, unknown>).AWS_ACCESS_KEY_ID
+
+    expect(() => envSchema.parse(withoutKey)).toThrow()
+  })
+
+  it('should reject missing AWS_SECRET_ACCESS_KEY', () => {
+    const withoutSecret = { ...validEnv }
+    delete (withoutSecret as Record<string, unknown>).AWS_SECRET_ACCESS_KEY
+
+    expect(() => envSchema.parse(withoutSecret)).toThrow()
+  })
+
+  it('should reject non-numeric MAX_AVATAR_SIZE_BYTES', () => {
+    const bad = { ...validEnv, MAX_AVATAR_SIZE_BYTES: 'huge' }
+
+    expect(() => envSchema.parse(bad)).toThrow()
+  })
+
+  it('should reject non-positive MAX_AVATAR_DIMENSION', () => {
+    const bad = { ...validEnv, MAX_AVATAR_DIMENSION: '0' }
+
+    expect(() => envSchema.parse(bad)).toThrow()
   })
 })

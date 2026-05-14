@@ -14,4 +14,7 @@ export {
   mailConfig,
   MAIL_CONFIG_KEY,
   type IMailConfig,
+  storageConfig,
+  STORAGE_CONFIG_KEY,
+  type IStorageConfig,
 } from './segment'

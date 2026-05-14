@@ -8,27 +8,22 @@ import styles from './profile-form.module.css';
 interface IProfileFields {
   displayName: string;
   bio: string;
-  avatar: string;
 }
 
-function fromUser(user: { displayName?: string; bio?: string | null; avatar?: string | null } | null): IProfileFields {
+function fromUser(user: { displayName?: string; bio?: string | null } | null): IProfileFields {
   return {
     displayName: user?.displayName ?? '',
     bio: user?.bio ?? '',
-    avatar: user?.avatar ?? '',
   };
 }
 
 function diffPayload(initial: IProfileFields, current: IProfileFields) {
-  const payload: { displayName?: string; bio?: string | null; avatar?: string | null } = {};
+  const payload: { displayName?: string; bio?: string | null } = {};
   if (current.displayName.trim() !== initial.displayName.trim()) {
     payload.displayName = current.displayName.trim();
   }
   if (current.bio !== initial.bio) {
     payload.bio = current.bio.length === 0 ? null : current.bio;
-  }
-  if (current.avatar.trim() !== initial.avatar.trim()) {
-    payload.avatar = current.avatar.trim().length === 0 ? null : current.avatar.trim();
   }
   return payload;
 }
@@ -51,8 +46,7 @@ export function ProfileForm() {
 
   const dirty =
     fields.displayName.trim() !== initial.displayName.trim() ||
-    fields.bio !== initial.bio ||
-    fields.avatar.trim() !== initial.avatar.trim();
+    fields.bio !== initial.bio;
 
   function setField<K extends keyof IProfileFields>(key: K, value: IProfileFields[K]) {
     setFields((prev) => ({ ...prev, [key]: value }));
@@ -112,46 +106,6 @@ export function ProfileForm() {
 
   return (
     <form className={styles.card} onSubmit={onSubmit} noValidate>
-      <div className={styles.avatarRow}>
-        <div
-          className={styles.avatar}
-          style={
-            fields.avatar.trim()
-              ? { backgroundImage: `url('${fields.avatar.trim()}')` }
-              : undefined
-          }
-          aria-hidden="true"
-        >
-          {!fields.avatar.trim() && (
-            <span className={styles.avatarInitial}>
-              {(fields.displayName.trim() || '?').charAt(0).toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div className={styles.avatarMeta}>
-          <label className="eyebrow" htmlFor="profile-avatar">
-            Avatar URL
-          </label>
-          <input
-            id="profile-avatar"
-            type="url"
-            inputMode="url"
-            className={styles.input}
-            value={fields.avatar}
-            placeholder="https://…"
-            onChange={(e) => setField('avatar', e.target.value)}
-            aria-invalid={!!errors['avatar']}
-            aria-describedby={errors['avatar'] ? 'profile-avatar-error' : undefined}
-          />
-          {errors['avatar'] && (
-            <div id="profile-avatar-error" className={styles.fieldError}>
-              {errors['avatar']}
-            </div>
-          )}
-          <p className={styles.helper}>https only. File upload is coming soon.</p>
-        </div>
-      </div>
-
       <div className={styles.grid2}>
         <div>
           <label className="eyebrow" htmlFor="profile-display-name">

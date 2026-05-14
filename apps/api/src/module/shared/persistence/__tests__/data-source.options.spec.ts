@@ -15,6 +15,8 @@ describe('buildDataSourceOptions', () => {
       DB_LOGGING: 'true',
       JWT_SECRET: 'test-secret-minimum-16',
       RESEND_API_KEY: 'test-resend-key',
+      AWS_ACCESS_KEY_ID: 'test',
+      AWS_SECRET_ACCESS_KEY: 'test',
     }
   })
 

@@ -1,7 +1,13 @@
 import { Module, type DynamicModule } from "@nestjs/common";
 import { ConfigModule as NestConfigModule } from "@nestjs/config";
 import { envSchema } from "./env.schema";
-import { appConfig, databaseConfig, jwtConfig, mailConfig } from "./segment";
+import {
+  appConfig,
+  databaseConfig,
+  jwtConfig,
+  mailConfig,
+  storageConfig,
+} from "./segment";
 
 @Module({})
 export class ConfigModule {
@@ -24,7 +30,7 @@ export class ConfigModule {
 
             return result.data;
           },
-          load: [appConfig, databaseConfig, jwtConfig, mailConfig],
+          load: [appConfig, databaseConfig, jwtConfig, mailConfig, storageConfig],
         }),
       ],
     };

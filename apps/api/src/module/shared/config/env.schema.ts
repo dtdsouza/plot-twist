@@ -30,4 +30,18 @@ export const envSchema = z.object({
     .string()
     .url()
     .default('http://localhost:4200/verify-email-change'),
+
+  S3_REGION: z.string().min(1).default('us-east-1'),
+  S3_ENDPOINT: z.string().optional().default(''),
+  AWS_ACCESS_KEY_ID: z.string().min(1),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1),
+  S3_BUCKET_AVATARS: z.string().min(1).default('plot-twist-avatars'),
+  S3_PUBLIC_URL_BASE: z.string().optional().default(''),
+  MAX_AVATAR_SIZE_BYTES: z.coerce.number().int().positive().default(2_097_152),
+  MAX_AVATAR_DIMENSION: z.coerce.number().int().positive().default(2048),
+  AVATAR_ALLOWED_MIME: z
+    .string()
+    .min(1)
+    .default('image/jpeg,image/png,image/webp'),
+  PRESIGNED_POST_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 })
