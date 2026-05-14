@@ -15,12 +15,16 @@ import {
   EmailChangeService,
   type IEmailChangeInitiateResult,
 } from '../../core/email-change.service'
+import { AvatarService } from '../../core/avatar.service'
 import { JwtAuthGuard } from '../guard/jwt-auth.guard'
 import { CurrentUser } from '../decorator/current-user.decorator'
 import type { IUserResponse } from '../dto/auth-response.interface'
 import type { IJwtPayload } from '../dto/jwt-payload.interface'
 import { UpdateProfileDto } from '../dto/update-profile.dto'
 import { EmailChangeInitiateDto } from '../dto/email-change-initiate.dto'
+import { AvatarUploadIntentDto } from '../dto/avatar-upload-intent.dto'
+import { AvatarFinalizeDto } from '../dto/avatar-finalize.dto'
+import type { IAvatarUploadIntentResponse } from '../dto/avatar-upload-intent-response.interface'
 
 @Controller('user')
 @UseGuards(JwtAuthGuard)
@@ -28,6 +32,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly emailChangeService: EmailChangeService,
+    private readonly avatarService: AvatarService,
   ) {}
 
   @Get('me')
@@ -50,6 +55,24 @@ export class UserController {
     @Body() dto: EmailChangeInitiateDto,
   ): Promise<IEmailChangeInitiateResult> {
     return this.emailChangeService.initiate(current.sub, dto)
+  }
+
+  @Post('me/avatar/upload-intent')
+  @HttpCode(HttpStatus.OK)
+  async createAvatarUploadIntent(
+    @CurrentUser() current: IJwtPayload,
+    @Body() dto: AvatarUploadIntentDto,
+  ): Promise<IAvatarUploadIntentResponse> {
+    return this.avatarService.initiateUpload(current.sub, dto)
+  }
+
+  @Post('me/avatar/finalize')
+  @HttpCode(HttpStatus.OK)
+  async finalizeAvatarUpload(
+    @CurrentUser() current: IJwtPayload,
+    @Body() dto: AvatarFinalizeDto,
+  ): Promise<IUserResponse> {
+    return this.avatarService.finalize(current.sub, dto.uploadKey)
   }
 
   @Get(':id')

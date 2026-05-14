@@ -121,7 +121,6 @@ export function validateResetPasswordForm(data: {
 }
 
 export const BIO_MAX_LENGTH = 240;
-export const AVATAR_MAX_LENGTH = 500;
 
 export function validateBio(bio: string): string | null {
   if (bio.length > BIO_MAX_LENGTH) {
@@ -130,27 +129,9 @@ export function validateBio(bio: string): string | null {
   return null;
 }
 
-export function validateAvatarUrl(url: string): string | null {
-  const trimmed = url.trim();
-  if (!trimmed) return null;
-  if (trimmed.length > AVATAR_MAX_LENGTH) {
-    return `Avatar URL must be at most ${AVATAR_MAX_LENGTH} characters`;
-  }
-  if (!trimmed.startsWith('https://')) {
-    return 'Avatar URL must start with https://';
-  }
-  try {
-    new URL(trimmed);
-  } catch {
-    return 'Please enter a valid URL';
-  }
-  return null;
-}
-
 export function validateProfileForm(data: {
   displayName: string;
   bio: string;
-  avatar: string;
 }): Record<string, string> {
   const errors: Record<string, string> = {};
 
@@ -162,11 +143,6 @@ export function validateProfileForm(data: {
   const bioError = validateBio(data.bio);
   if (bioError) {
     errors['bio'] = bioError;
-  }
-
-  const avatarError = validateAvatarUrl(data.avatar);
-  if (avatarError) {
-    errors['avatar'] = avatarError;
   }
 
   return errors;

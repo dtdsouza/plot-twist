@@ -7,6 +7,11 @@ import type {
   IUserResponse,
   IVerifyEmailChangeRequest,
 } from './types/auth';
+import type {
+  IAvatarFinalizeRequest,
+  IAvatarUploadIntentRequest,
+  IAvatarUploadIntentResponse,
+} from './types/avatar';
 
 class AuthApiError extends Error {
   readonly statusCode: number;
@@ -168,6 +173,76 @@ export async function verifyEmailChange(
   });
 
   return handleResponse<{ message: string; email: string }>(response);
+}
+
+export async function createAvatarUploadIntent(
+  data: IAvatarUploadIntentRequest
+): Promise<IAvatarUploadIntentResponse> {
+  const response = await fetch('/api/user/me/avatar/upload-intent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<IAvatarUploadIntentResponse>(response);
+}
+
+export async function finalizeAvatarUpload(
+  data: IAvatarFinalizeRequest
+): Promise<IUserResponse> {
+  const response = await fetch('/api/user/me/avatar/finalize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<IUserResponse>(response);
+}
+
+export function uploadToPresignedPost(
+  url: string,
+  fields: Readonly<Record<string, string>>,
+  file: File,
+  onProgress?: (loaded: number, total: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    for (const [k, v] of Object.entries(fields)) {
+      formData.append(k, v);
+    }
+    formData.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+
+    if (onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          onProgress(event.loaded, event.total);
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(
+          new AuthApiError(
+            `Upload failed (HTTP ${xhr.status})`,
+            xhr.status
+          )
+        );
+      }
+    };
+    xhr.onerror = () => {
+      reject(new AuthApiError('Network error during upload', 0));
+    };
+
+    xhr.send(formData);
+  });
 }
 
 export { AuthApiError };

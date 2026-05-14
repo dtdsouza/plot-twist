@@ -112,12 +112,14 @@
             "testPathPatterns": [
               "\\.int-spec\\.ts$"
             ]
-          },
-          "e2e": {
-            "testPathPatterns": [
-              "\\.e2e-spec\\.ts$"
-            ]
           }
+        }
+      },
+      "test:e2e": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.js --testPathPatterns=e2e-spec --forceExit --runInBand",
+          "cwd": "apps/api"
         }
       }
     }
@@ -133,6 +135,8 @@
     "lint:arch": "depcruise src --config .dependency-cruiser.cjs --output-type text"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1045.0",
+    "@aws-sdk/s3-presigned-post": "^3.1045.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.0",
@@ -143,6 +147,7 @@
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "image-size": "^2.0.2",
     "pg": "^8.18.0",
     "reflect-metadata": "^0.1.13",
     "resend": "^6.9.4",

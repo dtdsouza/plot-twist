@@ -1,0 +1,5 @@
+export { StorageModule } from './storage.module'
+export { StorageClient } from './client/storage.client'
+export type { IPresignedPost } from './interface/presigned-post.interface'
+export type { IPresignedPostOptions } from './interface/presigned-post-options.interface'
+export type { IObjectMetadata } from './interface/object-metadata.interface'
