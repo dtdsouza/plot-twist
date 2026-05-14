@@ -34,10 +34,12 @@ module.exports = {
     '!src/module/shared/storage/**/*.module.ts',
     '!src/module/identity/**/migrations/**',
     '!src/module/identity/**/__tests__/**',
+    '!src/module/identity/**/__test-support__/**',
     '!src/module/shared/config/**/__tests__/**',
     '!src/module/shared/typeorm/**/__tests__/**',
     '!src/module/shared/persistence/**/__tests__/**',
     '!src/module/shared/storage/**/__tests__/**',
+    '!src/module/shared/**/__test-support__/**',
   ],
   coverageThreshold: {
     global: {

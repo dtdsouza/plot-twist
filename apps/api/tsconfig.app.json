@@ -33,6 +33,7 @@
     "src/**/*.spec.ts",
     "src/**/*.int-spec.ts",
     "src/**/*.e2e-spec.ts",
-    "src/**/__tests__/**"
+    "src/**/__tests__/**",
+    "src/**/__test-support__/**"
   ]
 }

@@ -47,7 +47,7 @@ module.exports = {
   ],
   options: {
     doNotFollow: {
-      path: "node_modules|__tests__|migrations|\\.spec\\.ts$|\\.int-spec\\.ts$|\\.e2e-spec\\.ts$",
+      path: "node_modules|__tests__|__test-support__|migrations|\\.spec\\.ts$|\\.int-spec\\.ts$|\\.e2e-spec\\.ts$",
     },
     tsPreCompilationDeps: true,
     tsConfig: {
