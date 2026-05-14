@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common'
 import { StorageClient } from './client/storage.client'
-import { STORAGE_PROVIDER } from './provider/storage-provider.interface'
-import { S3Provider } from './provider/s3.provider'
+import { STORAGE_PORT } from './port/storage.port'
+import { S3StorageAdapter } from './adapter/s3.adapter'
 
 @Module({
   providers: [
     {
-      provide: STORAGE_PROVIDER,
-      useClass: S3Provider,
+      provide: STORAGE_PORT,
+      useClass: S3StorageAdapter,
     },
     StorageClient,
   ],

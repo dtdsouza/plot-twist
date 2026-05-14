@@ -13,10 +13,10 @@ import { STORAGE_CONFIG_KEY, type IStorageConfig } from '@module/shared/config'
 import type { IPresignedPostOptions } from '../interface/presigned-post-options.interface'
 import type { IPresignedPost } from '../interface/presigned-post.interface'
 import type { IObjectMetadata } from '../interface/object-metadata.interface'
-import type { IStorageProvider } from './storage-provider.interface'
+import type { IStoragePort } from '../port/storage.port'
 
 @Injectable()
-export class S3Provider implements IStorageProvider {
+export class S3StorageAdapter implements IStoragePort {
   private readonly client: S3Client
   private readonly endpoint: string | null
   private readonly publicUrlBase: string | null

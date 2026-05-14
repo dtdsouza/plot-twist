@@ -1,13 +1,10 @@
 import { Test, type TestingModule } from '@nestjs/testing'
 import { StorageClient } from '../storage.client'
-import {
-  STORAGE_PROVIDER,
-  type IStorageProvider,
-} from '../../provider/storage-provider.interface'
+import { STORAGE_PORT, type IStoragePort } from '../../port/storage.port'
 
 describe('StorageClient', () => {
   let client: StorageClient
-  let provider: jest.Mocked<IStorageProvider>
+  let provider: jest.Mocked<IStoragePort>
 
   beforeEach(async () => {
     provider = {
@@ -22,7 +19,7 @@ describe('StorageClient', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StorageClient,
-        { provide: STORAGE_PROVIDER, useValue: provider },
+        { provide: STORAGE_PORT, useValue: provider },
       ],
     }).compile()
 

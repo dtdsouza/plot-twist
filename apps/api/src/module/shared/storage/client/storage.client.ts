@@ -2,17 +2,14 @@ import { Inject, Injectable, Logger } from '@nestjs/common'
 import type { IPresignedPostOptions } from '../interface/presigned-post-options.interface'
 import type { IPresignedPost } from '../interface/presigned-post.interface'
 import type { IObjectMetadata } from '../interface/object-metadata.interface'
-import {
-  STORAGE_PROVIDER,
-  type IStorageProvider,
-} from '../provider/storage-provider.interface'
+import { STORAGE_PORT, type IStoragePort } from '../port/storage.port'
 
 @Injectable()
 export class StorageClient {
   private readonly logger = new Logger(StorageClient.name)
 
   constructor(
-    @Inject(STORAGE_PROVIDER) private readonly provider: IStorageProvider,
+    @Inject(STORAGE_PORT) private readonly provider: IStoragePort,
   ) {}
 
   async createPresignedPost(

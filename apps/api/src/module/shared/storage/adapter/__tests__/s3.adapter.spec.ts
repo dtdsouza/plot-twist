@@ -35,7 +35,7 @@ jest.mock('@aws-sdk/s3-presigned-post', () => ({
   createPresignedPost: (...args: unknown[]) => mockCreatePresignedPost(...args),
 }))
 
-import { S3Provider } from '../s3.provider'
+import { S3StorageAdapter } from '../s3.adapter'
 
 const baseStorageConfig = {
   region: 'us-east-1',
@@ -52,7 +52,7 @@ const baseStorageConfig = {
 
 async function buildProvider(
   overrides: Partial<typeof baseStorageConfig> = {},
-): Promise<S3Provider> {
+): Promise<S3StorageAdapter> {
   const config = { ...baseStorageConfig, ...overrides }
   const mockConfigService = {
     getOrThrow: jest.fn().mockReturnValue(config),
@@ -60,15 +60,15 @@ async function buildProvider(
 
   const module: TestingModule = await Test.createTestingModule({
     providers: [
-      S3Provider,
+      S3StorageAdapter,
       { provide: ConfigService, useValue: mockConfigService },
     ],
   }).compile()
 
-  return module.get(S3Provider)
+  return module.get(S3StorageAdapter)
 }
 
-describe('S3Provider', () => {
+describe('S3StorageAdapter', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })

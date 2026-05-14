@@ -2,9 +2,9 @@ import type { IPresignedPostOptions } from '../interface/presigned-post-options.
 import type { IPresignedPost } from '../interface/presigned-post.interface'
 import type { IObjectMetadata } from '../interface/object-metadata.interface'
 
-export const STORAGE_PROVIDER = Symbol('STORAGE_PROVIDER')
+export const STORAGE_PORT = Symbol('STORAGE_PORT')
 
-export interface IStorageProvider {
+export interface IStoragePort {
   createPresignedPost(options: IPresignedPostOptions): Promise<IPresignedPost>
   headObject(bucket: string, key: string): Promise<IObjectMetadata | null>
   getObjectRange(bucket: string, key: string, byteRange: string): Promise<Buffer>
