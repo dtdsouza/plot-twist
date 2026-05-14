@@ -35,7 +35,8 @@ plot-twist/
 │   │               ├── mail/         # Resend email service
 │   │               ├── typeorm/      # BaseEntity, BaseRepository, TypeormPersistenceModule
 │   │               ├── persistence/  # DataSourceOptions builder + PersistenceModule
-│   │               └── storage/      # Generic S3 storage client (presigned POST, HEAD, copy, delete)
+│   │               ├── storage/      # Generic S3 storage client (presigned POST, HEAD, copy, delete)
+│   │               └── image/        # Image-format utilities (magic-byte sniffing)
 │   └── web/                          # Next.js frontend
 ├── docs/                             # Architecture docs
 │   ├── adr/                          # Architecture Decision Records
@@ -56,7 +57,7 @@ All NestJS modules live under `apps/api/src/module/`. There are three kinds:
 |------|----------|---------|
 | Orchestrator | `module/app/` | Root `AppModule`; composes domain + shared modules |
 | Domain | `module/{domain}/` (e.g., `identity/`) | A bounded context with its own schema |
-| Shared | `module/shared/{concern}/` | Cross-cutting support (config, mail, typeorm, persistence, storage) |
+| Shared | `module/shared/{concern}/` | Cross-cutting support (config, mail, typeorm, persistence, storage, image) |
 
 Each domain module follows this internal layout:
 
@@ -89,6 +90,7 @@ Cross-module imports must use `@module/*` path aliases and resolve to a public-A
 | `@module/shared/typeorm` | `src/module/shared/typeorm/index.ts` |
 | `@module/shared/persistence` | `src/module/shared/persistence/index.ts` |
 | `@module/shared/storage` | `src/module/shared/storage/index.ts` |
+| `@module/shared/image` | `src/module/shared/image/index.ts` |
 
 Allowed dependency directions (enforced by dependency-cruiser):
 
