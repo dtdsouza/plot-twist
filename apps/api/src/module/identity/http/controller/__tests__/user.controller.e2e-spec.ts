@@ -4,8 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import * as request from 'supertest'
-import { DataSource } from 'typeorm'
-import { Client } from 'pg'
 import { AuthController } from '../auth.controller'
 import { UserController } from '../user.controller'
 import { AuthService } from '../../../core/auth.service'
@@ -20,6 +18,12 @@ import { PasswordResetTokenRepository } from '../../../persistence/repository/pa
 import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
 import { EmailClient } from '@module/shared/mail'
+import {
+  closeTestPool,
+  ensureIdentitySchema,
+  truncateIdentity,
+} from '@module/shared/test-support'
+import { createUser } from '@module/identity/test-support'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)
@@ -29,29 +33,18 @@ const DB_NAME = process.env.DB_NAME ?? 'plot-twist'
 
 describe('UserController (e2e)', () => {
   let app: INestApplication
-  let dataSource: DataSource
   let module: TestingModule
   let jwtService: JwtService
 
   const seededUser = {
     email: 'me@e2e.test',
-    password: 'password123',
     displayName: 'Me User',
   }
   let seededUserId: string
   let seededUserToken: string
 
   beforeAll(async () => {
-    const pgClient = new Client({
-      host: DB_HOST,
-      port: DB_PORT,
-      user: DB_USERNAME,
-      password: DB_PASSWORD,
-      database: DB_NAME,
-    })
-    await pgClient.connect()
-    await pgClient.query('CREATE SCHEMA IF NOT EXISTS identity')
-    await pgClient.end()
+    await ensureIdentitySchema()
 
     const mockEmailClient = {
       send: jest.fn().mockResolvedValue(undefined),
@@ -117,37 +110,27 @@ describe('UserController (e2e)', () => {
     )
     await app.init()
 
-    dataSource = module.get<DataSource>(DataSource)
     jwtService = module.get<JwtService>(JwtService)
   })
 
   beforeEach(async () => {
-    await dataSource.query(
-      `DELETE FROM identity."password_reset_token" WHERE "userId" IN (SELECT id FROM identity."user" WHERE email LIKE $1)`,
-      ['%@e2e.test'],
-    )
-    await dataSource.query(`DELETE FROM identity."user" WHERE email LIKE $1`, [
-      '%@e2e.test',
-    ])
+    await truncateIdentity()
 
-    const registerResponse = await request(app.getHttpServer())
-      .post('/api/auth/register')
-      .send(seededUser)
-      .expect(201)
-
-    seededUserId = registerResponse.body.user.id
-    seededUserToken = registerResponse.body.accessToken
+    const user = await createUser({
+      email: seededUser.email,
+      displayName: seededUser.displayName,
+    })
+    seededUserId = user.id
+    seededUserToken = jwtService.sign({
+      sub: user.id,
+      email: user.email,
+    })
   })
 
   afterAll(async () => {
-    await dataSource.query(
-      `DELETE FROM identity."password_reset_token" WHERE "userId" IN (SELECT id FROM identity."user" WHERE email LIKE $1)`,
-      ['%@e2e.test'],
-    )
-    await dataSource.query(`DELETE FROM identity."user" WHERE email LIKE $1`, [
-      '%@e2e.test',
-    ])
+    await truncateIdentity()
     await app?.close()
+    await closeTestPool()
   })
 
   describe('GET /api/user/me', () => {
