@@ -1,7 +1,7 @@
 ---
 title: "refactor: Test data factories with raw pg, isolated from production repositories"
 type: refactor
-status: active
+status: completed
 date: 2026-05-14
 ---
 

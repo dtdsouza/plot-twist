@@ -111,7 +111,8 @@
           "int": {
             "testPathPatterns": [
               "\\.int-spec\\.ts$"
-            ]
+            ],
+            "runInBand": true
           }
         }
       },

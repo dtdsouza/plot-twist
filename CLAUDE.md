@@ -130,6 +130,16 @@ Libraries live under `libs/{scope}/{type}-{name}` where type is one of:
 - **Config:** Centralized via `module/shared/config/` with Zod schema validation (`env.schema.ts`)
 - **Email:** Via `module/shared/mail/` using Resend (`resend-email.service.ts`)
 
+### Test Data Setup
+
+DB-touching tests seed rows via factories, not through production services or repositories. Each module owns its factories under `module/{domain}/__test-support__/`:
+
+- **Shared infra:** `module/shared/__test-support__/` exposes `getTestPool`, `closeTestPool`, `ensureIdentitySchema`, `truncateIdentity` (via the `@module/shared/test-support` alias — spec-only).
+- **Identity factories:** `module/identity/__test-support__/` exposes `createUser`, `createPasswordResetToken`, `createEmailChangeToken`, `synchronizeIdentitySchema`, plus the `TEST_DEFAULT_PASSWORD` constant (via `@module/identity/test-support`).
+- Factories use raw `pg` with parameterized SQL + `RETURNING`. They define local row types rather than importing entity classes — the integration suite is the parity check.
+- `tsconfig.app.json` excludes `src/**/__test-support__/**`, so test-support files do not enter the production build. The `@module/.../test-support` aliases live in `tsconfig.spec.json` only.
+- Integration tests run serially (`runInBand`) because all specs share `truncateIdentity()`; cross-worker truncate would race.
+
 ### Next.js (apps/web)
 
 - **Router:** App Router only
