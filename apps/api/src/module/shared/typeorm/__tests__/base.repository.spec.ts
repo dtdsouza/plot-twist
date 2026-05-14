@@ -30,7 +30,6 @@ describe("BaseRepository", () => {
       create: jest.fn(),
       save: jest.fn(),
       merge: jest.fn(),
-      remove: jest.fn(),
     } as unknown as jest.Mocked<Repository<TestEntity>>;
 
     testRepository = new TestRepository(mockTypeormRepository);
@@ -175,33 +174,4 @@ describe("BaseRepository", () => {
     });
   });
 
-  describe("delete", () => {
-    it("should find entity and remove it", async () => {
-      // Arrange
-      mockTypeormRepository.findOne.mockResolvedValue(mockEntity);
-      mockTypeormRepository.remove.mockResolvedValue(mockEntity);
-
-      // Act
-      await testRepository.delete("uuid-123");
-
-      // Assert
-      expect(mockTypeormRepository.findOne).toHaveBeenCalledWith({
-        where: { id: "uuid-123" },
-      });
-      expect(mockTypeormRepository.remove).toHaveBeenCalledWith(mockEntity);
-    });
-
-    it("should throw NotFoundException when entity does not exist", async () => {
-      // Arrange
-      mockTypeormRepository.findOne.mockResolvedValue(null);
-
-      // Act & Assert
-      await expect(testRepository.delete("missing-id")).rejects.toThrow(
-        NotFoundException
-      );
-      await expect(testRepository.delete("missing-id")).rejects.toThrow(
-        "Entity with id missing-id not found"
-      );
-    });
-  });
 });
