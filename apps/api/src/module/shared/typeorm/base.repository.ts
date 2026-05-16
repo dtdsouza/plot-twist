@@ -49,14 +49,4 @@ export abstract class BaseRepository<T extends BaseEntity> {
     const saved = await this.repository.save(merged)
     return { ...saved }
   }
-
-  async delete(id: string): Promise<void> {
-    const existing = await this.repository.findOne({
-      where: { id } as FindOptionsWhere<T>,
-    })
-    if (!existing) {
-      throw new NotFoundException(`Entity with id ${id} not found`)
-    }
-    await this.repository.remove(existing)
-  }
 }

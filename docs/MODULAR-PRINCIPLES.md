@@ -92,6 +92,28 @@ const module = await Test.createTestingModule({
 
 **Rule:** If a test requires importing a module from another context to pass, the boundary is violated.
 
+### Test data setup: `__test-support__/`
+
+Each domain module owns its test data factories under a `__test-support__/` subfolder, the same way it owns its entities, repositories, and migrations:
+
+```
+module/identity/
+  __test-support__/
+    factories/              <-- createUser, createPasswordResetToken, ...
+    db/                     <-- synchronizeIdentitySchema bootstrap
+    index.ts                <-- barrel (alias: @module/identity/test-support)
+module/shared/
+  __test-support__/
+    db/                     <-- pg pool, ensureIdentitySchema, truncateIdentity
+    index.ts                <-- barrel (alias: @module/shared/test-support)
+```
+
+- Factories insert rows directly via a shared `pg.Pool` — they do not import production repositories, services, or entity classes. The integration suite running against a real DB is the parity check.
+- `__test-support__/` is excluded from `tsconfig.app.json` and the test-only aliases live in `tsconfig.spec.json` only, so the production build cannot consume them.
+- Integration tests share `truncateIdentity()` for cleanup, so the `int` Jest config runs `--runInBand`.
+
+**Rule:** Test data setup is the module's own responsibility — factories live inside the module, not in a sibling test tree.
+
 ---
 
 ## 4. Individual Scale

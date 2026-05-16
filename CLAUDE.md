@@ -130,6 +130,19 @@ Libraries live under `libs/{scope}/{type}-{name}` where type is one of:
 - **Config:** Centralized via `module/shared/config/` with Zod schema validation (`env.schema.ts`)
 - **Email:** Via `module/shared/mail/` using Resend (`resend-email.service.ts`)
 
+### Test Data Setup
+
+DB-touching tests seed rows via factories, not through production services or repositories. Each module owns its factories under `module/{domain}/__test-support__/`:
+
+- **Shared infra (generic, no domain knowledge):** `module/shared/__test-support__/` exposes `getTestPool`, `closeTestPool`, `ensureWorkerDatabase`, `ensureSchema(name)`, `truncateTables(schema, tables)` (via the `@module/shared/test-support` alias — spec-only).
+- **Identity test-support:** `module/identity/__test-support__/` exposes `createUser`, `createPasswordResetToken`, `createEmailChangeToken`, `synchronizeIdentitySchema`, the `IDENTITY_SCHEMA` / `IDENTITY_TABLES` / `IDENTITY_TEST_ENTITIES` constants, the `ensureIdentitySchema()` / `truncateIdentity()` wrappers, and `TEST_DEFAULT_PASSWORD` (via `@module/identity/test-support`). The wrappers are thin: they pass the constants into the shared primitives. Add a similar `db/` folder under every new domain.
+- Factories use raw `pg` with parameterized SQL + `RETURNING`. They define local row types rather than importing entity classes — the integration suite is the parity check.
+- `tsconfig.app.json` excludes `src/**/__test-support__/**`, so test-support files do not enter the production build. The `@module/.../test-support` aliases live in `tsconfig.spec.json` only.
+- **Per-worker DB isolation:** a Jest `setupFile` (`module/shared/__test-support__/jest/setup-worker-db.ts`) suffixes `DB_NAME` with `_test_w${JEST_WORKER_ID}` before any test module loads. `ensureSchema()` calls `ensureWorkerDatabase()` first to `CREATE DATABASE` if missing (race-safe via `42P04`). Each worker owns an isolated database, so `truncateTables()` can't race across workers — int and e2e suites run in parallel.
+- Any int/e2e spec that synchronizes the identity schema must use `IDENTITY_TEST_ENTITIES` (or include all three entities), because `truncateIdentity()` targets the full set.
+- `IDENTITY_TABLES` mirrors `@Entity({ name })` and must stay in sync with the entity decorations; the factory int-specs surface drift immediately.
+- The default `test` target runs unit + int only (`testPathPatterns: \\.(int-)?spec\\.ts$`). E2e runs via `test:e2e`, which sets `NODE_OPTIONS=--experimental-vm-modules` (the AWS SDK's retry path needs it; runs surface this under parallel LocalStack load).
+
 ### Next.js (apps/web)
 
 - **Router:** App Router only

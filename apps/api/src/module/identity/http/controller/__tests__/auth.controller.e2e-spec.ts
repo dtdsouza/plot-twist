@@ -5,8 +5,6 @@ import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import * as request from 'supertest'
 import * as crypto from 'node:crypto'
-import { DataSource } from 'typeorm'
-import { Client } from 'pg'
 import { AuthController } from '../auth.controller'
 import { AuthService } from '../../../core/auth.service'
 import { EmailChangeService } from '../../../core/email-change.service'
@@ -18,6 +16,13 @@ import { PasswordResetTokenRepository } from '../../../persistence/repository/pa
 import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { EUserStatus } from '../../../persistence/enum/user-status.enum'
 import { EmailClient } from '@module/shared/mail'
+import { closeTestPool } from '@module/shared/test-support'
+import {
+  createPasswordResetToken,
+  createUser,
+  ensureIdentitySchema,
+  truncateIdentity,
+} from '@module/identity/test-support'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)
@@ -27,23 +32,13 @@ const DB_NAME = process.env.DB_NAME ?? 'plot-twist'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication
-  let dataSource: DataSource
   let module: TestingModule
   let mockEmailClient: {
     send: jest.Mock
   }
 
   beforeAll(async () => {
-    const pgClient = new Client({
-      host: DB_HOST,
-      port: DB_PORT,
-      user: DB_USERNAME,
-      password: DB_PASSWORD,
-      database: DB_NAME,
-    })
-    await pgClient.connect()
-    await pgClient.query('CREATE SCHEMA IF NOT EXISTS identity')
-    await pgClient.end()
+    await ensureIdentitySchema()
 
     mockEmailClient = {
       send: jest.fn().mockResolvedValue(undefined),
@@ -100,30 +95,17 @@ describe('AuthController (e2e)', () => {
       }),
     )
     await app.init()
-
-    dataSource = module.get<DataSource>(DataSource)
   })
 
   beforeEach(async () => {
     mockEmailClient.send.mockClear()
-    await dataSource.query(
-      `DELETE FROM identity."password_reset_token" WHERE "userId" IN (SELECT id FROM identity."user" WHERE email LIKE $1)`,
-      ['%@e2e.test'],
-    )
-    await dataSource.query(`DELETE FROM identity."user" WHERE email LIKE $1`, [
-      '%@e2e.test',
-    ])
+    await truncateIdentity()
   })
 
   afterAll(async () => {
-    await dataSource.query(
-      `DELETE FROM identity."password_reset_token" WHERE "userId" IN (SELECT id FROM identity."user" WHERE email LIKE $1)`,
-      ['%@e2e.test'],
-    )
-    await dataSource.query(`DELETE FROM identity."user" WHERE email LIKE $1`, [
-      '%@e2e.test',
-    ])
+    await truncateIdentity()
     await app?.close()
+    await closeTestPool()
   })
 
   describe('POST /api/auth/register', () => {
@@ -190,10 +172,11 @@ describe('AuthController (e2e)', () => {
     })
 
     it('should return 409 when email already exists', async () => {
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send(validPayload)
-        .expect(201)
+      await createUser({
+        email: validPayload.email,
+        plainPassword: validPayload.password,
+        displayName: validPayload.displayName,
+      })
 
       await request(app.getHttpServer())
         .post('/api/auth/register')
@@ -204,13 +187,11 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /api/auth/login', () => {
     beforeEach(async () => {
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          email: 'login@e2e.test',
-          password: 'password123',
-          displayName: 'Login User',
-        })
+      await createUser({
+        email: 'login@e2e.test',
+        plainPassword: 'password123',
+        displayName: 'Login User',
+      })
     })
 
     it('should return 200 and auth response with valid credentials', async () => {
@@ -264,13 +245,7 @@ describe('AuthController (e2e)', () => {
   describe('POST /api/auth/forgot-password', () => {
     it('should return 202 with generic message for existing user', async () => {
       // Arrange
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          email: 'forgot@e2e.test',
-          password: 'password123',
-          displayName: 'Forgot User',
-        })
+      await createUser({ email: 'forgot@e2e.test', displayName: 'Forgot User' })
 
       // Act
       const response = await request(app.getHttpServer())
@@ -296,18 +271,12 @@ describe('AuthController (e2e)', () => {
     })
 
     it('should return 202 for INACTIVE user', async () => {
-      // Arrange — register then set to inactive
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          email: 'inactive@e2e.test',
-          password: 'password123',
-          displayName: 'Inactive User',
-        })
-      await dataSource.query(
-        `UPDATE identity."user" SET status = $1 WHERE email = $2`,
-        [EUserStatus.INACTIVE, 'inactive@e2e.test'],
-      )
+      // Arrange — seed an inactive user directly via factory
+      await createUser({
+        email: 'inactive@e2e.test',
+        displayName: 'Inactive User',
+        status: EUserStatus.INACTIVE,
+      })
 
       // Act
       const response = await request(app.getHttpServer())
@@ -315,7 +284,7 @@ describe('AuthController (e2e)', () => {
         .send({ email: 'inactive@e2e.test' })
         .expect(202)
 
-      // Assert — no token should be created
+      // Assert — no email should be sent
       expect(response.body.message).toContain(
         'If an account with that email exists',
       )
@@ -354,31 +323,17 @@ describe('AuthController (e2e)', () => {
 
     it('should return 400 for expired token', async () => {
       // Arrange
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          email: 'expired@e2e.test',
-          password: 'password123',
-          displayName: 'Expired User',
-        })
-
+      const user = await createUser({
+        email: 'expired@e2e.test',
+        displayName: 'Expired User',
+      })
       const rawToken = crypto.randomBytes(32).toString('hex')
-      const tokenHash = crypto
-        .createHash('sha256')
-        .update(rawToken)
-        .digest('hex')
-      const userId = (
-        await dataSource.query(
-          `SELECT id FROM identity."user" WHERE email = $1`,
-          ['expired@e2e.test'],
-        )
-      )[0].id
-
-      // Expired 1 hour ago
-      await dataSource.query(
-        `INSERT INTO identity."password_reset_token" ("tokenHash", "userId", "expiresAt") VALUES ($1, $2, $3)`,
-        [tokenHash, userId, new Date(Date.now() - 3600000)],
-      )
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex')
+      await createPasswordResetToken({
+        userId: user.id,
+        tokenHash,
+        expiresAt: new Date(Date.now() - 3_600_000),
+      })
 
       // Act & Assert
       await request(app.getHttpServer())
@@ -388,32 +343,15 @@ describe('AuthController (e2e)', () => {
     })
 
     it('should return 200 for valid token and update password', async () => {
-      // Arrange — register user
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          email: 'reset@e2e.test',
-          password: 'oldPassword123',
-          displayName: 'Reset User',
-        })
-
-      // Create token directly in DB
+      // Arrange
+      const user = await createUser({
+        email: 'reset@e2e.test',
+        plainPassword: 'oldPassword123',
+        displayName: 'Reset User',
+      })
       const rawToken = crypto.randomBytes(32).toString('hex')
-      const tokenHash = crypto
-        .createHash('sha256')
-        .update(rawToken)
-        .digest('hex')
-      const userId = (
-        await dataSource.query(
-          `SELECT id FROM identity."user" WHERE email = $1`,
-          ['reset@e2e.test'],
-        )
-      )[0].id
-
-      await dataSource.query(
-        `INSERT INTO identity."password_reset_token" ("tokenHash", "userId", "expiresAt") VALUES ($1, $2, $3)`,
-        [tokenHash, userId, new Date(Date.now() + 3600000)],
-      )
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex')
+      await createPasswordResetToken({ userId: user.id, tokenHash })
 
       // Act
       const response = await request(app.getHttpServer())
@@ -433,30 +371,13 @@ describe('AuthController (e2e)', () => {
 
     it('should return 400 for already-used token', async () => {
       // Arrange
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          email: 'usedtoken@e2e.test',
-          password: 'password123',
-          displayName: 'Used Token User',
-        })
-
+      const user = await createUser({
+        email: 'usedtoken@e2e.test',
+        displayName: 'Used Token User',
+      })
       const rawToken = crypto.randomBytes(32).toString('hex')
-      const tokenHash = crypto
-        .createHash('sha256')
-        .update(rawToken)
-        .digest('hex')
-      const userId = (
-        await dataSource.query(
-          `SELECT id FROM identity."user" WHERE email = $1`,
-          ['usedtoken@e2e.test'],
-        )
-      )[0].id
-
-      await dataSource.query(
-        `INSERT INTO identity."password_reset_token" ("tokenHash", "userId", "expiresAt") VALUES ($1, $2, $3)`,
-        [tokenHash, userId, new Date(Date.now() + 3600000)],
-      )
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex')
+      await createPasswordResetToken({ userId: user.id, tokenHash })
 
       // Use it once
       await request(app.getHttpServer())

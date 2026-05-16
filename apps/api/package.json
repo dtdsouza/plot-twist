@@ -96,7 +96,10 @@
           "{workspaceRoot}/coverage/apps/api"
         ],
         "options": {
-          "jestConfig": "apps/api/jest.config.js"
+          "jestConfig": "apps/api/jest.config.js",
+          "testPathPatterns": [
+            "\\.(int-)?spec\\.ts$"
+          ]
         },
         "configurations": {
           "unit": {
@@ -118,7 +121,7 @@
       "test:e2e": {
         "executor": "nx:run-commands",
         "options": {
-          "command": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.js --testPathPatterns=e2e-spec --forceExit --runInBand",
+          "command": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.js --testPathPatterns=e2e-spec --forceExit",
           "cwd": "apps/api"
         }
       }
