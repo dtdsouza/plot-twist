@@ -19,7 +19,7 @@ import { EmailChangeTokenRepository } from '../persistence/repository/email-chan
 import { EmailChangeInitiateDto } from '../http/dto/email-change-initiate.dto'
 import { EmailClient } from '@module/shared/mail'
 import { MAIL_CONFIG_KEY, type IMailConfig } from '@module/shared/config'
-import { buildEmailChangeVerificationEmail } from '../mail/email-change.template'
+import { buildEmailChangeVerificationEmail } from './notifications/email-change.template'
 
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
 
