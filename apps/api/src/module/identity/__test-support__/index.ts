@@ -18,3 +18,10 @@ export {
   synchronizeIdentitySchema,
   type IdentitySchemaBootstrap,
 } from './db/synchronize-identity-schema'
+export {
+  IDENTITY_SCHEMA,
+  IDENTITY_TABLES,
+  IDENTITY_TEST_ENTITIES,
+} from './db/identity-entities'
+export { ensureIdentitySchema } from './db/schema-setup'
+export { truncateIdentity } from './db/cleanup'

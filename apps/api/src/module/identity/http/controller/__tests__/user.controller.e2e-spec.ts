@@ -18,12 +18,12 @@ import { PasswordResetTokenRepository } from '../../../persistence/repository/pa
 import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
 import { EmailClient } from '@module/shared/mail'
+import { closeTestPool } from '@module/shared/test-support'
 import {
-  closeTestPool,
+  createUser,
   ensureIdentitySchema,
   truncateIdentity,
-} from '@module/shared/test-support'
-import { createUser } from '@module/identity/test-support'
+} from '@module/identity/test-support'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
 const DB_PORT = parseInt(process.env.DB_PORT ?? '5432', 10)

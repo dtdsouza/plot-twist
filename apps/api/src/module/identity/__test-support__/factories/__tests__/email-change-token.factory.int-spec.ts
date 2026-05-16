@@ -1,8 +1,9 @@
-import { closeTestPool, truncateIdentity } from '@module/shared/test-support'
+import { closeTestPool } from '@module/shared/test-support'
 import {
   createEmailChangeToken,
   createUser,
   synchronizeIdentitySchema,
+  truncateIdentity,
   type IdentitySchemaBootstrap,
 } from '@module/identity/test-support'
 

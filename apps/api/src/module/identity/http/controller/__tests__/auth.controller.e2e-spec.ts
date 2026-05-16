@@ -16,14 +16,12 @@ import { PasswordResetTokenRepository } from '../../../persistence/repository/pa
 import { EmailChangeTokenRepository } from '../../../persistence/repository/email-change-token.repository'
 import { EUserStatus } from '../../../persistence/enum/user-status.enum'
 import { EmailClient } from '@module/shared/mail'
-import {
-  closeTestPool,
-  ensureIdentitySchema,
-  truncateIdentity,
-} from '@module/shared/test-support'
+import { closeTestPool } from '@module/shared/test-support'
 import {
   createPasswordResetToken,
   createUser,
+  ensureIdentitySchema,
+  truncateIdentity,
 } from '@module/identity/test-support'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'

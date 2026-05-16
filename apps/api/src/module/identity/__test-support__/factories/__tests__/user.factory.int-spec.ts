@@ -1,8 +1,9 @@
 import * as bcrypt from 'bcryptjs'
-import { closeTestPool, truncateIdentity } from '@module/shared/test-support'
+import { closeTestPool } from '@module/shared/test-support'
 import {
   createUser,
   synchronizeIdentitySchema,
+  truncateIdentity,
   TEST_DEFAULT_PASSWORD,
   type IdentitySchemaBootstrap,
 } from '@module/identity/test-support'

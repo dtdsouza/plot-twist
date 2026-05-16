@@ -1,10 +1,8 @@
 import { Test, type TestingModule } from '@nestjs/testing'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
-import { ensureIdentitySchema } from '@module/shared/test-support'
-import { UserEntity } from '../../persistence/entity/user.entity'
-import { PasswordResetTokenEntity } from '../../persistence/entity/password-reset-token.entity'
-import { EmailChangeTokenEntity } from '../../persistence/entity/email-change-token.entity'
+import { ensureIdentitySchema } from './schema-setup'
+import { IDENTITY_TEST_ENTITIES } from './identity-entities'
 
 export interface IdentitySchemaBootstrap {
   dataSource: DataSource
@@ -23,7 +21,7 @@ export async function synchronizeIdentitySchema(): Promise<IdentitySchemaBootstr
         username: process.env.DB_USERNAME ?? 'postgres',
         password: process.env.DB_PASSWORD ?? 'postgres',
         database: process.env.DB_NAME ?? 'plot-twist',
-        entities: [UserEntity, PasswordResetTokenEntity, EmailChangeTokenEntity],
+        entities: [...IDENTITY_TEST_ENTITIES],
         synchronize: true,
       }),
     ],

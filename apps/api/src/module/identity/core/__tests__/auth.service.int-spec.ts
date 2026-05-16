@@ -15,14 +15,13 @@ import { PasswordResetTokenEntity } from '../../persistence/entity/password-rese
 import { UserRepository } from '../../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../../persistence/repository/password-reset-token.repository'
 import { EmailClient } from '@module/shared/mail'
+import { closeTestPool } from '@module/shared/test-support'
 import {
-  closeTestPool,
-  ensureIdentitySchema,
-  truncateIdentity,
-} from '@module/shared/test-support'
-import {
+  IDENTITY_TEST_ENTITIES,
   createPasswordResetToken,
   createUser,
+  ensureIdentitySchema,
+  truncateIdentity,
 } from '@module/identity/test-support'
 
 const DB_HOST = process.env.DB_HOST ?? '127.0.0.1'
@@ -57,7 +56,7 @@ describe('AuthService (integration)', () => {
           username: DB_USERNAME,
           password: DB_PASSWORD,
           database: DB_NAME,
-          entities: [UserEntity, PasswordResetTokenEntity],
+          entities: [...IDENTITY_TEST_ENTITIES],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([UserEntity, PasswordResetTokenEntity]),
