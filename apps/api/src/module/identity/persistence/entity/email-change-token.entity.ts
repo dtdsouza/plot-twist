@@ -1,5 +1,5 @@
 import { Entity, Column, Index } from 'typeorm'
-import { BaseEntity } from '@module/shared/typeorm'
+import { BaseEntity } from '@module/shared/persistence'
 
 @Entity({ schema: 'identity', name: 'email_change_token' })
 export class EmailChangeTokenEntity extends BaseEntity {

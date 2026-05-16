@@ -28,4 +28,4 @@ import {
     }),
   ],
 })
-export class TypeormPersistenceModule {}
+export class PersistenceModule {}

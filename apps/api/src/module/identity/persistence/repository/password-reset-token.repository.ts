@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, type FindOptionsWhere } from 'typeorm'
-import { BaseRepository } from '@module/shared/typeorm'
+import { BaseRepository } from '@module/shared/persistence'
 import { PasswordResetTokenEntity } from '../entity/password-reset-token.entity'
 
 @Injectable()

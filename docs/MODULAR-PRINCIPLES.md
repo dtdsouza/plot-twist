@@ -38,7 +38,7 @@ Each bounded context is a self-contained NestJS module that can be composed into
 
 - `module/app/` — orchestrator (root `AppModule`)
 - `module/{domain}/` — bounded contexts (e.g., `identity/`)
-- `module/shared/{concern}/` — cross-cutting support (`config`, `mail`, `typeorm`, `persistence`)
+- `module/shared/{concern}/` — cross-cutting support (`config`, `mail`, `persistence`, `storage`, `image`)
 
 ```typescript
 // apps/api/src/module/app/app.module.ts
