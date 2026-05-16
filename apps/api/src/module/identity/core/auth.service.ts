@@ -23,7 +23,7 @@ import { IAuthResponse } from '../http/dto/auth-response.interface'
 import { toUserResponse } from '../http/dto/user-response.mapper'
 import { EmailClient } from '@module/shared/mail'
 import { MAIL_CONFIG_KEY, type IMailConfig } from '@module/shared/config'
-import { buildPasswordResetEmail } from '../mail/password-reset.template'
+import { buildPasswordResetEmail } from './notifications/password-reset.template'
 
 const BCRYPT_SALT_ROUNDS = 12
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
