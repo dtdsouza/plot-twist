@@ -4,8 +4,6 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { ConfigModule } from '@module/shared/config'
 import { PersistenceModule } from '@module/shared/persistence'
 import { IdentityModule } from '@module/identity'
-import { AppController } from './app.controller'
-import { AppService } from './app.service'
 
 @Module({
   imports: [
@@ -14,10 +12,6 @@ import { AppService } from './app.service'
     PersistenceModule,
     IdentityModule,
   ],
-  controllers: [AppController],
-  providers: [
-    AppService,
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
