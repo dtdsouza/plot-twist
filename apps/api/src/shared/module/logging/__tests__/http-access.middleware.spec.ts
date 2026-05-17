@@ -177,6 +177,30 @@ describe('HttpAccessMiddleware', () => {
       expect(entry.durationMs).toBeGreaterThanOrEqual(0)
       expect(entry.requestId).toBe('abc-123')
     })
+
+    it('strips the query string from the logged URL', () => {
+      // Arrange
+      const childLogger = buildMockChildLogger()
+      const req = {
+        method: 'GET',
+        originalUrl: '/api/auth/reset?token=secret-jwt-token&ref=abc',
+        url: '/api/auth/reset?token=secret-jwt-token&ref=abc',
+        requestId: 'req-test-id',
+        log: childLogger,
+      }
+      const res = buildMockResponse(200)
+      const next = jest.fn()
+
+      // Act
+      middleware.use(req as never, res as never, next)
+      res.emit('finish')
+
+      // Assert
+      const entry = childLogger._entries[0]
+      expect(entry.url).toBe('/api/auth/reset')
+      expect(entry.url).not.toContain('token')
+      expect(entry.url).not.toContain('?')
+    })
   })
 
   describe('emits exactly one record per request', () => {

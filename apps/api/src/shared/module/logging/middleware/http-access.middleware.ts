@@ -39,9 +39,10 @@ export class HttpAccessMiddleware implements NestMiddleware {
       const statusCode = res.statusCode
       const level = resolveLevel(statusCode)
       const requestId = req.requestId
+      const rawUrl = req.originalUrl ?? req.url
       const meta = {
         method: req.method,
-        url: req.originalUrl ?? req.url,
+        url: rawUrl.split('?')[0],
         statusCode,
         durationMs,
         requestId,
