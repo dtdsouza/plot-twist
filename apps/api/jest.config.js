@@ -15,7 +15,7 @@ module.exports = {
   moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
   setupFiles: [
     '<rootDir>/src/module/shared/__test-support__/jest/setup-worker-db.ts',
-    '<rootDir>/src/test-setup.ts',
+    '<rootDir>/src/module/shared/__test-support__/jest/test-setup.ts',
   ],
   testMatch: ['**/__tests__/**/*.spec.ts', '**/__tests__/**/*.int-spec.ts', '**/__tests__/**/*.e2e-spec.ts'],
   coverageDirectory: '../../coverage/apps/api',
