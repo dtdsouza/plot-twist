@@ -4,6 +4,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { ConfigModule } from '@module/shared/config'
 import { LoggingModule } from '@module/shared/logging'
 import { PersistenceModule } from '@module/shared/persistence'
+import { HealthModule } from '@module/shared/health'
 import { IdentityModule } from '@module/identity'
 
 @Module({
@@ -12,6 +13,7 @@ import { IdentityModule } from '@module/identity'
     LoggingModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     PersistenceModule,
+    HealthModule,
     IdentityModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
