@@ -128,6 +128,49 @@ describe('RequestIdMiddleware', () => {
     })
   })
 
+  describe('when x-request-id header contains unsafe characters', () => {
+    it('falls back to a generated UUID when the value contains a newline', () => {
+      // Arrange
+      const req = buildMockRequest({ 'x-request-id': 'abc\n{"fake":"entry"}' })
+      const res = buildMockResponse()
+      const next = jest.fn()
+
+      // Act
+      middleware.use(req as never, res as never, next)
+
+      // Assert — must not echo the malicious value
+      expect(req.requestId).toMatch(UUID_V4_REGEX)
+      expect(res.setHeader).toHaveBeenCalledWith('x-request-id', expect.stringMatching(UUID_V4_REGEX))
+    })
+
+    it('falls back to a generated UUID when the value exceeds 128 characters', () => {
+      // Arrange
+      const req = buildMockRequest({ 'x-request-id': 'a'.repeat(129) })
+      const res = buildMockResponse()
+      const next = jest.fn()
+
+      // Act
+      middleware.use(req as never, res as never, next)
+
+      // Assert
+      expect(req.requestId).toMatch(UUID_V4_REGEX)
+    })
+
+    it('accepts a well-formed UUID v4 as-is', () => {
+      // Arrange
+      const validId = '550e8400-e29b-41d4-a716-446655440000'
+      const req = buildMockRequest({ 'x-request-id': validId })
+      const res = buildMockResponse()
+      const next = jest.fn()
+
+      // Act
+      middleware.use(req as never, res as never, next)
+
+      // Assert
+      expect(req.requestId).toBe(validId)
+    })
+  })
+
   describe('next()', () => {
     it('calls next to pass control to the next middleware', () => {
       // Arrange

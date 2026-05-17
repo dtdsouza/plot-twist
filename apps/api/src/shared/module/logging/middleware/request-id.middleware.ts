@@ -15,6 +15,15 @@ interface IResponse {
 
 type TNextFn = (error?: unknown) => void
 
+const SAFE_REQUEST_ID_REGEX = /^[\w-]{1,128}$/
+
+function resolveSafeRequestId(inbound: string | undefined): string {
+  if (inbound !== undefined && SAFE_REQUEST_ID_REGEX.test(inbound)) {
+    return inbound
+  }
+  return randomUUID()
+}
+
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {
   constructor(
@@ -22,7 +31,7 @@ export class RequestIdMiddleware implements NestMiddleware {
   ) {}
 
   use(req: IRequest, res: IResponse, next: TNextFn): void {
-    const requestId = (req.headers['x-request-id'] as string | undefined) ?? randomUUID()
+    const requestId = resolveSafeRequestId(req.headers['x-request-id'] as string | undefined)
 
     req.requestId = requestId
     res.setHeader('x-request-id', requestId)
