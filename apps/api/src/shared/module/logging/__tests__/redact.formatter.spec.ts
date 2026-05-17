@@ -157,4 +157,36 @@ describe('redact formatter', () => {
       expect(list[1].password).toBe(REDACTED_VALUE)
     })
   })
+
+  describe('prototype pollution safety', () => {
+    it('skips __proto__ keys without throwing or mutating Object.prototype', () => {
+      // Arrange — snapshot Object.prototype before the call
+      const before = Object.getPrototypeOf({})
+      const info: TInfoObject = {
+        level: 'info',
+        message: 'payload with prototype key',
+      }
+      // Inject __proto__ key via Object.defineProperty to avoid TypeScript complaints
+      Object.defineProperty(info, '__proto__', { value: { injected: true }, enumerable: true, configurable: true })
+
+      // Act — must not throw
+      expect(() => applyRedact(info)).not.toThrow()
+
+      // Assert — Object.prototype is unchanged
+      expect(Object.getPrototypeOf({})).toBe(before)
+      expect(({} as Record<string, unknown>)['injected']).toBeUndefined()
+    })
+
+    it('skips constructor keys', () => {
+      // Arrange
+      const info: TInfoObject = { level: 'info', message: 'test' } as TInfoObject
+      ;(info as Record<string, unknown>)['constructor'] = 'malicious'
+
+      // Act
+      const result = applyRedact(info)
+
+      // Assert — constructor key is dropped from the output
+      expect(Object.prototype.hasOwnProperty.call(result, 'constructor')).toBe(false)
+    })
+  })
 })

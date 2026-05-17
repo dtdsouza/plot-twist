@@ -14,6 +14,8 @@ export const REDACTED_KEYS: ReadonlyArray<string> = [
 
 export const REDACTED_VALUE = '[REDACTED]'
 
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
 function redactObject(obj: unknown): unknown {
   if (obj === null || typeof obj !== 'object') {
     return obj
@@ -25,6 +27,7 @@ function redactObject(obj: unknown): unknown {
 
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (UNSAFE_KEYS.has(key)) continue
     if (REDACTED_KEYS.includes(key.toLowerCase())) {
       result[key] = REDACTED_VALUE
     } else {
