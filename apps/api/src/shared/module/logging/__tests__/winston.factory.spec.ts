@@ -1,4 +1,4 @@
-import { createWinstonOptions } from '../factory/winston.factory'
+import { createWinstonOptions, createWinstonLogger } from '../factory/winston.factory'
 import { jsonFormatter } from '../formatter/json.formatter'
 import { prettyFormatter } from '../formatter/pretty.formatter'
 
@@ -67,6 +67,29 @@ describe('winston factory', () => {
 
       // Assert — they must be different formatter instances
       expect(jsonOptions.format).not.toBe(prettyOptions.format)
+    })
+  })
+
+  describe('level filtering behavior', () => {
+    it('a logger at warn level reports info as disabled', () => {
+      // Arrange
+      const logger = createWinstonLogger({ level: 'warn', format: 'json' })
+
+      // Assert — isLevelEnabled() checks whether the level would actually be logged
+      expect(logger.isLevelEnabled('error')).toBe(true)
+      expect(logger.isLevelEnabled('warn')).toBe(true)
+      expect(logger.isLevelEnabled('info')).toBe(false)
+      expect(logger.isLevelEnabled('debug')).toBe(false)
+      expect(logger.isLevelEnabled('verbose')).toBe(false)
+    })
+
+    it('a logger at info level enables info but not debug', () => {
+      // Arrange
+      const logger = createWinstonLogger({ level: 'info', format: 'json' })
+
+      // Assert
+      expect(logger.isLevelEnabled('info')).toBe(true)
+      expect(logger.isLevelEnabled('debug')).toBe(false)
     })
   })
 })
