@@ -23,7 +23,8 @@
       "@module/shared/storage": ["src/shared/module/storage/index.ts"],
       "@module/shared/image": ["src/shared/image/index.ts"],
       "@module/shared/test-support": ["src/shared/__test-support__/index.ts"],
-      "@module/shared/logging": ["src/shared/module/logging/index.ts"]
+      "@module/shared/logging": ["src/shared/module/logging/index.ts"],
+      "@module/shared/health": ["src/shared/module/health/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],
