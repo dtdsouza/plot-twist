@@ -24,18 +24,22 @@ Plot-Twist is a book club application built as an Nx monorepo. It consists of a 
 plot-twist/
 ├── apps/
 │   ├── api/                          # NestJS backend
+│   │   ├── folderStructure.config.mjs # eslint-plugin-project-structure rules
+│   │   ├── eslint.config.mjs         # ESLint 9 flat config
 │   │   └── src/
 │   │       ├── data-source.ts        # TypeORM data source config (CLI entrypoint)
 │   │       ├── main.ts
-│   │       └── module/               # Every NestJS module (domain + shared support)
-│   │           ├── app/              # Root app module (orchestrator)
-│   │           ├── identity/         # Domain: auth, users, password reset
-│   │           └── shared/           # Cross-cutting support modules
+│   │       ├── app.module.ts         # Root AppModule (orchestrator)
+│   │       ├── module/               # Domain modules (bounded contexts)
+│   │       │   └── identity/         # Domain: auth, users, password reset
+│   │       └── shared/               # Cross-cutting support
+│   │           ├── __test-support__/ # Generic DB/jest helpers (per-worker DB isolation)
+│   │           ├── image/            # Library: image-format utilities (no NestJS module)
+│   │           └── module/           # Shared NestJS modules
 │   │               ├── config/       # Centralized env config (Zod-validated)
 │   │               ├── mail/         # Resend email service
 │   │               ├── persistence/  # BaseEntity, BaseRepository, PersistenceModule, DataSourceOptions builder
-│   │               ├── storage/      # Generic S3 storage client (presigned POST, HEAD, copy, delete)
-│   │               └── image/        # Image-format utilities (magic-byte sniffing)
+│   │               └── storage/      # Generic S3 storage client (presigned POST, HEAD, copy, delete)
 │   └── web/                          # Next.js frontend
 ├── docs/                             # Architecture docs
 │   ├── adr/                          # Architecture Decision Records
@@ -50,13 +54,17 @@ plot-twist/
 
 ### API Module Structure
 
-All NestJS modules live under `apps/api/src/module/`. There are three kinds:
+The `apps/api/src/` tree has three layers:
 
 | Kind | Location | Purpose |
 |------|----------|---------|
-| Orchestrator | `module/app/` | Root `AppModule`; composes domain + shared modules |
-| Domain | `module/{domain}/` (e.g., `identity/`) | A bounded context with its own schema |
-| Shared | `module/shared/{concern}/` | Cross-cutting support (config, mail, persistence, storage, image) |
+| Orchestrator | `src/app.module.ts` | Root `AppModule`; composes domain + shared modules |
+| Domain | `src/module/{domain}/` (e.g., `identity/`) | A bounded context with its own schema |
+| Shared module | `src/shared/module/{concern}/` | Cross-cutting NestJS modules (config, mail, persistence, storage) |
+| Shared library | `src/shared/{library}/` (e.g., `image/`) | Pure utilities, no NestJS module |
+| Shared test-support | `src/shared/__test-support__/` | Generic DB/jest helpers (per-worker DB isolation) |
+
+Folder structure is enforced by `apps/api/folderStructure.config.mjs` via `eslint-plugin-project-structure`.
 
 Each domain module follows this internal layout:
 
@@ -84,17 +92,17 @@ Cross-module imports must use `@module/*` path aliases and resolve to a public-A
 | Alias | Resolves to |
 |-------|-------------|
 | `@module/identity` | `src/module/identity/index.ts` |
-| `@module/shared/config` | `src/module/shared/config/index.ts` |
-| `@module/shared/mail` | `src/module/shared/mail/index.ts` |
-| `@module/shared/persistence` | `src/module/shared/persistence/index.ts` |
-| `@module/shared/storage` | `src/module/shared/storage/index.ts` |
-| `@module/shared/image` | `src/module/shared/image/index.ts` |
+| `@module/shared/config` | `src/shared/module/config/index.ts` |
+| `@module/shared/mail` | `src/shared/module/mail/index.ts` |
+| `@module/shared/persistence` | `src/shared/module/persistence/index.ts` |
+| `@module/shared/storage` | `src/shared/module/storage/index.ts` |
+| `@module/shared/image` | `src/shared/image/index.ts` |
 
 Allowed dependency directions (enforced by dependency-cruiser):
 
-- Domain modules → themselves, or `module/shared/*` (any sub-module)
-- `module/shared/*` → `module/shared/*` only (never a domain module)
-- `module/app/` → any module (orchestrator exception)
+- Domain modules → themselves, or `src/shared/*` (any shared module or library)
+- `src/shared/*` → `src/shared/*` only (never a domain module)
+- `src/app.module.ts` → any module (orchestrator exception)
 
 See `docs/adr/0006-module-shared-and-path-aliases.md` for the rationale.
 
@@ -123,20 +131,20 @@ Libraries live under `libs/{scope}/{type}-{name}` where type is one of:
 
 - **File naming:** kebab-case (e.g., `book-club.service.ts`)
 - **Class naming:** PascalCase (e.g., `BookClubService`)
-- **Organization:** Every NestJS module lives under `module/` — domains as `module/{domain}/`, cross-cutting concerns as `module/shared/{concern}/`
+- **Organization:** Domain modules live under `src/module/{domain}/`; shared NestJS modules under `src/shared/module/{concern}/`; shared libraries (no NestJS module) under `src/shared/{library}/`
 - **Pattern:** Controller → Service → Repository (TypeORM)
-- **Config:** Centralized via `module/shared/config/` with Zod schema validation (`env.schema.ts`)
-- **Email:** Via `module/shared/mail/` using Resend (`resend-email.service.ts`)
+- **Config:** Centralized via `src/shared/module/config/` with Zod schema validation (`env.schema.ts`)
+- **Email:** Via `src/shared/module/mail/` using Resend (`resend-email.service.ts`)
 
 ### Test Data Setup
 
 DB-touching tests seed rows via factories, not through production services or repositories. Each module owns its factories under `module/{domain}/__test-support__/`:
 
-- **Shared infra (generic, no domain knowledge):** `module/shared/__test-support__/` exposes `getTestPool`, `closeTestPool`, `ensureWorkerDatabase`, `ensureSchema(name)`, `truncateTables(schema, tables)` (via the `@module/shared/test-support` alias — spec-only).
+- **Shared infra (generic, no domain knowledge):** `src/shared/__test-support__/` exposes `getTestPool`, `closeTestPool`, `ensureWorkerDatabase`, `ensureSchema(name)`, `truncateTables(schema, tables)` (via the `@module/shared/test-support` alias — spec-only).
 - **Identity test-support:** `module/identity/__test-support__/` exposes `createUser`, `createPasswordResetToken`, `createEmailChangeToken`, `synchronizeIdentitySchema`, the `IDENTITY_SCHEMA` / `IDENTITY_TABLES` / `IDENTITY_TEST_ENTITIES` constants, the `ensureIdentitySchema()` / `truncateIdentity()` wrappers, and `TEST_DEFAULT_PASSWORD` (via `@module/identity/test-support`). The wrappers are thin: they pass the constants into the shared primitives. Add a similar `db/` folder under every new domain.
 - Factories use raw `pg` with parameterized SQL + `RETURNING`. They define local row types rather than importing entity classes — the integration suite is the parity check.
 - `tsconfig.app.json` excludes `src/**/__test-support__/**`, so test-support files do not enter the production build. The `@module/.../test-support` aliases live in `tsconfig.spec.json` only.
-- **Per-worker DB isolation:** a Jest `setupFile` (`module/shared/__test-support__/jest/setup-worker-db.ts`) suffixes `DB_NAME` with `_test_w${JEST_WORKER_ID}` before any test module loads. `ensureSchema()` calls `ensureWorkerDatabase()` first to `CREATE DATABASE` if missing (race-safe via `42P04`). Each worker owns an isolated database, so `truncateTables()` can't race across workers — int and e2e suites run in parallel.
+- **Per-worker DB isolation:** a Jest `setupFile` (`src/shared/__test-support__/jest/setup-worker-db.ts`) suffixes `DB_NAME` with `_test_w${JEST_WORKER_ID}` before any test module loads. `ensureSchema()` calls `ensureWorkerDatabase()` first to `CREATE DATABASE` if missing (race-safe via `42P04`). Each worker owns an isolated database, so `truncateTables()` can't race across workers — int and e2e suites run in parallel.
 - Any int/e2e spec that synchronizes the identity schema must use `IDENTITY_TEST_ENTITIES` (or include all three entities), because `truncateIdentity()` targets the full set.
 - `IDENTITY_TABLES` mirrors `@Entity({ name })` and must stay in sync with the entity decorations; the factory int-specs surface drift immediately.
 - The default `test` target runs unit + int only (`testPathPatterns: \\.(int-)?spec\\.ts$`). E2e runs via `test:e2e`, which sets `NODE_OPTIONS=--experimental-vm-modules` (the AWS SDK's retry path needs it; runs surface this under parallel LocalStack load).

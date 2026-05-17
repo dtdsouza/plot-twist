@@ -17,12 +17,12 @@
     "paths": {
       "@module/identity": ["src/module/identity/index.ts"],
       "@module/identity/test-support": ["src/module/identity/__test-support__/index.ts"],
-      "@module/shared/config": ["src/module/shared/config/index.ts"],
-      "@module/shared/mail": ["src/module/shared/mail/index.ts"],
-      "@module/shared/persistence": ["src/module/shared/persistence/index.ts"],
-      "@module/shared/storage": ["src/module/shared/storage/index.ts"],
-      "@module/shared/image": ["src/module/shared/image/index.ts"],
-      "@module/shared/test-support": ["src/module/shared/__test-support__/index.ts"]
+      "@module/shared/config": ["src/shared/module/config/index.ts"],
+      "@module/shared/mail": ["src/shared/module/mail/index.ts"],
+      "@module/shared/persistence": ["src/shared/module/persistence/index.ts"],
+      "@module/shared/storage": ["src/shared/module/storage/index.ts"],
+      "@module/shared/image": ["src/shared/image/index.ts"],
+      "@module/shared/test-support": ["src/shared/__test-support__/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

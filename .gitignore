@@ -23,6 +23,8 @@ dist
 *.swo
 *~
 
+*/**/projectStructure.cache.json
+
 # OS
 .DS_Store
 Thumbs.db
