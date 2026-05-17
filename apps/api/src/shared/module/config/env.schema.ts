@@ -44,4 +44,9 @@ export const envSchema = z.object({
     .min(1)
     .default('image/jpeg,image/png,image/webp'),
   PRESIGNED_POST_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+
+  LOG_LEVEL: z
+    .enum(['error', 'warn', 'info', 'debug', 'verbose'])
+    .default('info'),
+  LOG_FORMAT: z.enum(['json', 'pretty']).optional(),
 })

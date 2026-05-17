@@ -5,6 +5,7 @@ import {
   appConfig,
   databaseConfig,
   jwtConfig,
+  loggingConfig,
   mailConfig,
   storageConfig,
 } from "./segment";
@@ -30,7 +31,7 @@ export class ConfigModule {
 
             return result.data;
           },
-          load: [appConfig, databaseConfig, jwtConfig, mailConfig, storageConfig],
+          load: [appConfig, databaseConfig, jwtConfig, loggingConfig, mailConfig, storageConfig],
         }),
       ],
     };

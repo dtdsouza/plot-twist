@@ -3,3 +3,4 @@ export { databaseConfig, DATABASE_CONFIG_KEY, type IDatabaseConfig } from './dat
 export { jwtConfig, JWT_CONFIG_KEY, type IJwtConfig } from './jwt.config'
 export { mailConfig, MAIL_CONFIG_KEY, type IMailConfig } from './mail.config'
 export { storageConfig, STORAGE_CONFIG_KEY, type IStorageConfig } from './storage.config'
+export { loggingConfig, LOGGING_CONFIG_KEY, type ILoggingConfig } from './logging.config'
