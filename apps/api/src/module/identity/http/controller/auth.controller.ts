@@ -19,9 +19,7 @@ import { ResetPasswordDto } from '../dto/reset-password.dto'
 import { ChangePasswordDto } from '../dto/change-password.dto'
 import { VerifyEmailChangeDto } from '../dto/verify-email-change.dto'
 import { IAuthResponse } from '../dto/auth-response.interface'
-import { JwtAuthGuard } from '../guard/jwt-auth.guard'
-import { CurrentUser } from '../decorator/current-user.decorator'
-import type { IJwtPayload } from '../dto/jwt-payload.interface'
+import { JwtAuthGuard, CurrentUser, type IJwtPayload } from '@module/shared/auth'
 
 @Controller('auth')
 export class AuthController {

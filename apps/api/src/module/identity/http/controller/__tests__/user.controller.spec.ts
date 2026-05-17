@@ -4,9 +4,8 @@ import { UserController } from '../user.controller'
 import { UserService } from '../../../core/user.service'
 import { EmailChangeService } from '../../../core/email-change.service'
 import { AvatarService } from '../../../core/avatar.service'
-import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
+import { JwtAuthGuard, type IJwtPayload } from '@module/shared/auth'
 import { IUserResponse } from '../../dto/auth-response.interface'
-import { IJwtPayload } from '../../dto/jwt-payload.interface'
 
 describe('UserController', () => {
   let controller: UserController

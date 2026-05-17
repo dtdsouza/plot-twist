@@ -7,5 +7,4 @@ export { UpdateProfileDto } from "./update-profile.dto";
 export { EmailChangeInitiateDto } from "./email-change-initiate.dto";
 export { VerifyEmailChangeDto } from "./verify-email-change.dto";
 export type { IAuthResponse, IUserResponse } from "./auth-response.interface";
-export type { IJwtPayload } from "./jwt-payload.interface";
 export { toUserResponse } from "./user-response.mapper";

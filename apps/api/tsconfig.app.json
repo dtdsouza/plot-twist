@@ -18,6 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@module/identity": ["src/module/identity/index.ts"],
+      "@module/shared/auth": ["src/shared/module/auth/index.ts"],
       "@module/shared/config": ["src/shared/module/config/index.ts"],
       "@module/shared/mail": ["src/shared/module/mail/index.ts"],
       "@module/shared/persistence": ["src/shared/module/persistence/index.ts"],

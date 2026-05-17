@@ -5,6 +5,7 @@ import { ConfigModule } from '@module/shared/config'
 import { LoggingModule } from '@module/shared/logging'
 import { PersistenceModule } from '@module/shared/persistence'
 import { HealthModule } from '@module/shared/health'
+import { AuthModule } from '@module/shared/auth'
 import { IdentityModule } from '@module/identity'
 
 @Module({
@@ -14,6 +15,7 @@ import { IdentityModule } from '@module/identity'
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     PersistenceModule,
     HealthModule,
+    AuthModule,
     IdentityModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
