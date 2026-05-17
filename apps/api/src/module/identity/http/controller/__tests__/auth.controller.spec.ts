@@ -3,7 +3,7 @@ import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common'
 import { AuthController } from '../auth.controller'
 import { AuthService } from '../../../core/auth.service'
 import { EmailChangeService } from '../../../core/email-change.service'
-import { JwtAuthGuard } from '../../guard/jwt-auth.guard'
+import { JwtAuthGuard } from '@module/shared/auth'
 import { IAuthResponse } from '../../dto/auth-response.interface'
 
 describe('AuthController', () => {

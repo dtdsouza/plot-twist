@@ -16,7 +16,7 @@ import { EmailChangeTokenEntity } from '../persistence/entity/email-change-token
 import { UserRepository } from '../persistence/repository/user.repository'
 import { PasswordResetTokenRepository } from '../persistence/repository/password-reset-token.repository'
 import { EmailChangeTokenRepository } from '../persistence/repository/email-change-token.repository'
-import { JwtAuthGuard } from '../http/guard/jwt-auth.guard'
+import { JwtAuthGuard } from '@module/shared/auth'
 import { EmailClient } from '@module/shared/mail'
 import { closeTestPool } from '@module/shared/test-support'
 import {

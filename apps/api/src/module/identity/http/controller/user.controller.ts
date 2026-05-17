@@ -16,10 +16,8 @@ import {
   type IEmailChangeInitiateResult,
 } from '../../core/email-change.service'
 import { AvatarService } from '../../core/avatar.service'
-import { JwtAuthGuard } from '../guard/jwt-auth.guard'
-import { CurrentUser } from '../decorator/current-user.decorator'
+import { JwtAuthGuard, CurrentUser, type IJwtPayload } from '@module/shared/auth'
 import type { IUserResponse } from '../dto/auth-response.interface'
-import type { IJwtPayload } from '../dto/jwt-payload.interface'
 import { UpdateProfileDto } from '../dto/update-profile.dto'
 import { EmailChangeInitiateDto } from '../dto/email-change-initiate.dto'
 import { AvatarUploadIntentDto } from '../dto/avatar-upload-intent.dto'
