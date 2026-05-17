@@ -2,6 +2,8 @@
 
 A modern book club management platform that helps readers organize clubs, schedule meetings, and track reading progress together.
 
+> **Status:** Plot-Twist is a personal educational project — built to explore modern full-stack TypeScript patterns (Nx, NestJS, Next.js App Router, TypeORM, modular schema isolation). It is not production software, has no stability guarantees, and is not actively seeking contributors. You're welcome to read it, fork it, or borrow ideas.
+
 ## Features
 
 - **Club Management**: Create and manage book clubs with friends
