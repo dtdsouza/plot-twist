@@ -53,6 +53,9 @@ export const redact: Logform.FormatWrap = format((info) => {
   // Pre-seed `info` itself so that if any meta value back-references the
   // original info object (e.g. `req.log.info('msg', { req })`), the walker
   // detects the cycle rather than recursing infinitely.
+  // Note: diamond references (same object reachable via two distinct paths)
+  // are treated as '[Circular]' on the second encounter — this is the standard
+  // trade-off for cycle-safe serializers and is intentional.
   const seen = new WeakSet([info as object])
   const redacted = redactObject(meta, seen) as Record<string, unknown>
 

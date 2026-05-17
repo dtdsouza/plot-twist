@@ -15,7 +15,8 @@ interface IResponse {
 
 type TNextFn = (error?: unknown) => void
 
-const SAFE_REQUEST_ID_REGEX = /^[a-zA-Z0-9_-]{1,128}$/
+// Allows UUID, hex, alphanumeric IDs, and common distributed-tracing formats (dots, colons).
+const SAFE_REQUEST_ID_REGEX = /^[a-zA-Z0-9._:-]{1,128}$/
 
 function resolveSafeRequestId(inbound: string | undefined): string {
   if (inbound !== undefined && SAFE_REQUEST_ID_REGEX.test(inbound)) {
