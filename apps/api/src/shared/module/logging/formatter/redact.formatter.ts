@@ -10,6 +10,11 @@ export const REDACTED_KEYS: ReadonlyArray<string> = [
   'authorization',
   'cookie',
   'set-cookie',
+  'secret',
+  'clientsecret',
+  'apikey',
+  'api_key',
+  'privatekey',
 ]
 
 export const REDACTED_VALUE = '[REDACTED]'

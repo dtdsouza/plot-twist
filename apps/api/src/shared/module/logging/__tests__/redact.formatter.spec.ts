@@ -25,6 +25,11 @@ describe('redact formatter', () => {
         'authorization',
         'cookie',
         'set-cookie',
+        'secret',
+        'clientsecret',
+        'apikey',
+        'api_key',
+        'privatekey',
       ]
       for (const key of required) {
         expect(REDACTED_KEYS).toContain(key)
@@ -155,6 +160,26 @@ describe('redact formatter', () => {
       const list = result.list as Array<{ password: string }>
       expect(list[0].password).toBe(REDACTED_VALUE)
       expect(list[1].password).toBe(REDACTED_VALUE)
+    })
+  })
+
+  describe('extended deny-list keys', () => {
+    it.each([
+      ['secret', 'my-secret'],
+      ['clientSecret', 'client-value'],
+      ['clientsecret', 'client-lower'],
+      ['apiKey', 'key-value'],
+      ['api_key', 'key-underscore'],
+      ['privateKey', 'private-pem'],
+    ])('redacts the "%s" key', (key, value) => {
+      // Arrange
+      const info = { level: 'info', message: 'test', [key]: value } as TInfoObject
+
+      // Act
+      const result = applyRedact(info)
+
+      // Assert
+      expect(result[key]).toBe(REDACTED_VALUE)
     })
   })
 
