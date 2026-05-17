@@ -8,6 +8,7 @@ type TLogEntry = {
   statusCode: number
   durationMs: number
   requestId?: string
+  context?: string
 }
 
 function buildMockChildLogger() {
@@ -176,6 +177,7 @@ describe('HttpAccessMiddleware', () => {
       expect(typeof entry.durationMs).toBe('number')
       expect(entry.durationMs).toBeGreaterThanOrEqual(0)
       expect(entry.requestId).toBe('abc-123')
+      expect(entry.context).toBe('http')
     })
 
     it('strips the query string from the logged URL', () => {
