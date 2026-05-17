@@ -154,6 +154,7 @@ describe('RequestIdMiddleware', () => {
 
       // Assert
       expect(req.requestId).toMatch(UUID_V4_REGEX)
+      expect(res.setHeader).toHaveBeenCalledWith('x-request-id', expect.stringMatching(UUID_V4_REGEX))
     })
 
     it('accepts a well-formed UUID v4 as-is', () => {

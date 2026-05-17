@@ -15,7 +15,7 @@ interface IResponse {
 
 type TNextFn = (error?: unknown) => void
 
-const SAFE_REQUEST_ID_REGEX = /^[\w-]{1,128}$/
+const SAFE_REQUEST_ID_REGEX = /^[a-zA-Z0-9_-]{1,128}$/
 
 function resolveSafeRequestId(inbound: string | undefined): string {
   if (inbound !== undefined && SAFE_REQUEST_ID_REGEX.test(inbound)) {
@@ -31,7 +31,8 @@ export class RequestIdMiddleware implements NestMiddleware {
   ) {}
 
   use(req: IRequest, res: IResponse, next: TNextFn): void {
-    const requestId = resolveSafeRequestId(req.headers['x-request-id'] as string | undefined)
+    const raw = req.headers['x-request-id']
+    const requestId = resolveSafeRequestId(Array.isArray(raw) ? raw[0] : raw)
 
     req.requestId = requestId
     res.setHeader('x-request-id', requestId)
