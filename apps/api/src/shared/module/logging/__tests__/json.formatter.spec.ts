@@ -43,7 +43,7 @@ describe('json formatter', () => {
       expect(parsed).toHaveProperty('context', 'IdentityService')
     })
 
-    it('timestamp matches ISO-8601 format with timezone offset', () => {
+    it('timestamp matches ISO-8601 UTC format', () => {
       // Arrange
       const info: TInfoObject = { level: 'warn', message: 'check timestamp', context: 'Test' }
 
