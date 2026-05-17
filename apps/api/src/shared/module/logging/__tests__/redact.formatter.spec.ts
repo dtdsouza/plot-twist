@@ -189,4 +189,40 @@ describe('redact formatter', () => {
       expect(Object.prototype.hasOwnProperty.call(result, 'constructor')).toBe(false)
     })
   })
+
+  describe('circular reference safety', () => {
+    it('replaces a circular reference with "[Circular]" without throwing', () => {
+      // Arrange
+      const circular: Record<string, unknown> = { level: 'info', message: 'circular test' }
+      circular['self'] = circular // intentional cycle
+
+      // Act — must not throw
+      let result: TInfoObject | undefined
+      expect(() => {
+        result = applyRedact(circular as TInfoObject)
+      }).not.toThrow()
+
+      // Assert — circular node replaced with a safe placeholder
+      expect((result as Record<string, unknown>)['self']).toBe('[Circular]')
+    })
+
+    it('handles indirect circular references', () => {
+      // Arrange
+      const a: Record<string, unknown> = { level: 'info', message: 'test' }
+      const b: Record<string, unknown> = {}
+      a['child'] = b
+      b['parent'] = a // cycle: a -> b -> a
+
+      // Act
+      let result: TInfoObject | undefined
+      expect(() => {
+        result = applyRedact(a as TInfoObject)
+      }).not.toThrow()
+
+      // Assert — both entries produced without crash
+      expect(result).toBeDefined()
+      const child = (result as Record<string, unknown>)['child'] as Record<string, unknown>
+      expect(child['parent']).toBe('[Circular]')
+    })
+  })
 })

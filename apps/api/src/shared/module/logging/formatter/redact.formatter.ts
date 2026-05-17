@@ -16,13 +16,18 @@ export const REDACTED_VALUE = '[REDACTED]'
 
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
-function redactObject(obj: unknown): unknown {
+function redactObject(obj: unknown, seen = new WeakSet()): unknown {
   if (obj === null || typeof obj !== 'object') {
     return obj
   }
 
+  if (seen.has(obj as object)) {
+    return '[Circular]'
+  }
+  seen.add(obj as object)
+
   if (Array.isArray(obj)) {
-    return obj.map((item) => redactObject(item))
+    return obj.map((item) => redactObject(item, seen))
   }
 
   const result: Record<string, unknown> = {}
@@ -31,7 +36,7 @@ function redactObject(obj: unknown): unknown {
     if (REDACTED_KEYS.includes(key.toLowerCase())) {
       result[key] = REDACTED_VALUE
     } else {
-      result[key] = redactObject(value)
+      result[key] = redactObject(value, seen)
     }
   }
   return result
@@ -40,7 +45,11 @@ function redactObject(obj: unknown): unknown {
 export const redact: Logform.FormatWrap = format((info) => {
   const { message, level, ...meta } = info
 
-  const redacted = redactObject(meta) as Record<string, unknown>
+  // Pre-seed `info` itself so that if any meta value back-references the
+  // original info object (e.g. `req.log.info('msg', { req })`), the walker
+  // detects the cycle rather than recursing infinitely.
+  const seen = new WeakSet([info as object])
+  const redacted = redactObject(meta, seen) as Record<string, unknown>
 
   return Object.assign(redacted, { message, level })
 })
