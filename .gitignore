@@ -42,3 +42,6 @@ coverage
 
 # Misc
 tmp
+
+# Local-only assistant config
+.claude/settings.local.json

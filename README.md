@@ -42,7 +42,7 @@ cp .env.example .env
 ### Development
 
 ```bash
-# Terminal 1: Start the backend API (runs on localhost:3000)
+# Terminal 1: Start the backend API (runs on localhost:3333)
 pnpm nx serve api
 
 # Terminal 2: Start the frontend (runs on localhost:4200)
@@ -125,4 +125,4 @@ Follow the conventions in [CLAUDE.md](CLAUDE.md) for:
 
 ## License
 
-See LICENSE file for details.
+MIT — see [LICENSE](LICENSE).
