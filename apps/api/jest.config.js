@@ -22,11 +22,13 @@ module.exports = {
   collectCoverageFrom: [
     'src/module/identity/**/*.ts',
     'src/shared/module/config/**/*.ts',
+    'src/shared/module/logging/**/*.ts',
     'src/shared/module/persistence/**/*.ts',
     'src/shared/module/storage/**/*.ts',
     'src/shared/image/**/*.ts',
     '!src/**/index.ts',
     '!src/**/*.module.ts',
+    '!src/**/*.d.ts',
     '!src/**/migrations/**',
     '!src/**/__tests__/**',
     '!src/**/__test-support__/**',

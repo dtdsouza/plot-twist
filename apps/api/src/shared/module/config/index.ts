@@ -17,4 +17,7 @@ export {
   storageConfig,
   STORAGE_CONFIG_KEY,
   type IStorageConfig,
+  loggingConfig,
+  LOGGING_CONFIG_KEY,
+  type ILoggingConfig,
 } from './segment'

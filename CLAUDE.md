@@ -37,6 +37,7 @@ plot-twist/
 │   │           ├── image/            # Library: image-format utilities (no NestJS module)
 │   │           └── module/           # Shared NestJS modules
 │   │               ├── config/       # Centralized env config (Zod-validated)
+│   │               ├── logging/      # Winston-based structured logging, request correlation, redaction
 │   │               ├── mail/         # Resend email service
 │   │               ├── persistence/  # BaseEntity, BaseRepository, PersistenceModule, DataSourceOptions builder
 │   │               └── storage/      # Generic S3 storage client (presigned POST, HEAD, copy, delete)
@@ -60,7 +61,7 @@ The `apps/api/src/` tree has three layers:
 |------|----------|---------|
 | Orchestrator | `src/app.module.ts` | Root `AppModule`; composes domain + shared modules |
 | Domain | `src/module/{domain}/` (e.g., `identity/`) | A bounded context with its own schema |
-| Shared module | `src/shared/module/{concern}/` | Cross-cutting NestJS modules (config, mail, persistence, storage) |
+| Shared module | `src/shared/module/{concern}/` | Cross-cutting NestJS modules (config, logging, mail, persistence, storage) |
 | Shared library | `src/shared/{library}/` (e.g., `image/`) | Pure utilities, no NestJS module |
 | Shared test-support | `src/shared/__test-support__/` | Generic DB/jest helpers (per-worker DB isolation) |
 
@@ -93,6 +94,7 @@ Cross-module imports must use `@module/*` path aliases and resolve to a public-A
 |-------|-------------|
 | `@module/identity` | `src/module/identity/index.ts` |
 | `@module/shared/config` | `src/shared/module/config/index.ts` |
+| `@module/shared/logging` | `src/shared/module/logging/index.ts` |
 | `@module/shared/mail` | `src/shared/module/mail/index.ts` |
 | `@module/shared/persistence` | `src/shared/module/persistence/index.ts` |
 | `@module/shared/storage` | `src/shared/module/storage/index.ts` |
@@ -135,6 +137,12 @@ Libraries live under `libs/{scope}/{type}-{name}` where type is one of:
 - **Pattern:** Controller → Service → Repository (TypeORM)
 - **Config:** Centralized via `src/shared/module/config/` with Zod schema validation (`env.schema.ts`)
 - **Email:** Via `src/shared/module/mail/` using Resend (`resend-email.service.ts`)
+- **Logging:** Via `src/shared/module/logging/` using winston + nest-winston (`@module/shared/logging`)
+
+#### Logging conventions
+
+- Prefer structured metadata over string interpolation: `logger.info('user registered', { userId })` rather than `` logger.info(`user registered ${userId}`) ``. The redaction formatter only inspects structured fields; interpolated strings are opaque to it.
+- For per-request correlation, use `req.log` (a winston child logger pre-seeded with `requestId`). Singleton-scoped loggers from `new Logger('Ctx')` do not carry `requestId` because they are constructed at class-init time.
 
 ### Test Data Setup
 
@@ -233,3 +241,4 @@ See `apps/api/.env.example` for the full list. Key groups:
 - **Identity:** `JWT_SECRET`, `JWT_EXPIRES_IN`
 - **Mail:** `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `PASSWORD_RESET_URL`, `EMAIL_CHANGE_VERIFICATION_URL`
 - **Storage / S3:** `S3_REGION`, `S3_ENDPOINT` (local: LocalStack), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_AVATARS`, `S3_PUBLIC_URL_BASE`, `MAX_AVATAR_SIZE_BYTES`, `MAX_AVATAR_DIMENSION`, `AVATAR_ALLOWED_MIME`, `PRESIGNED_POST_TTL_SECONDS`
+- **Logging:** `LOG_LEVEL` (`error`/`warn`/`info`/`debug`/`verbose`, default `info`), `LOG_FORMAT` (`json`/`pretty`; default `pretty` in development, `json` otherwise)
