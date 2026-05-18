@@ -7,6 +7,7 @@ import { PersistenceModule } from '@module/shared/persistence'
 import { HealthModule } from '@module/shared/health'
 import { AuthModule } from '@module/shared/auth'
 import { IdentityModule } from '@module/identity'
+import { ClubsModule } from '@module/clubs'
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { IdentityModule } from '@module/identity'
     HealthModule,
     AuthModule,
     IdentityModule,
+    ClubsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

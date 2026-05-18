@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Global, Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigService } from '@nestjs/config'
 import {
@@ -6,26 +6,28 @@ import {
   type IDatabaseConfig,
 } from '@module/shared/config'
 
-@Module({
-  imports: [
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const db = config.getOrThrow<IDatabaseConfig>(DATABASE_CONFIG_KEY)
+const typeOrmDynamicModule = TypeOrmModule.forRootAsync({
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) => {
+    const db = config.getOrThrow<IDatabaseConfig>(DATABASE_CONFIG_KEY)
 
-        return {
-          type: db.type,
-          host: db.host,
-          port: db.port,
-          username: db.username,
-          password: db.password,
-          database: db.database,
-          synchronize: db.synchronize,
-          logging: db.logging,
-          autoLoadEntities: true,
-        }
-      },
-    }),
-  ],
+    return {
+      type: db.type,
+      host: db.host,
+      port: db.port,
+      username: db.username,
+      password: db.password,
+      database: db.database,
+      synchronize: db.synchronize,
+      logging: db.logging,
+      autoLoadEntities: true,
+    }
+  },
+})
+
+@Global()
+@Module({
+  imports: [typeOrmDynamicModule],
+  exports: [typeOrmDynamicModule],
 })
 export class PersistenceModule {}

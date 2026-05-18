@@ -163,6 +163,25 @@ DB-touching tests seed rows via factories, not through production services or re
 - **Components:** Server Components by default; add `"use client"` only when client interactivity is needed
 - **File naming:** kebab-case for files, PascalCase for components
 
+## Clubs Module (implemented)
+
+- **Schema:** `clubs` (PostgreSQL schema)
+- **Tables:** `club`, `membership`; **Enum:** `membership_role` (`owner`, `member`)
+- **Entities:** `@Entity({ schema: 'clubs', name: 'club' })` and `@Entity({ schema: 'clubs', name: 'membership' })`
+- **Endpoints** under `/api/clubs`:
+  - `POST /` — create club (authenticated; creator becomes owner via membership row)
+  - `GET /` — list clubs for authenticated user (their memberships)
+  - `GET /:id` — get single club (member-only)
+  - `PATCH /:id` — update club name/description (owner-only)
+  - `DELETE /:id` — delete club (owner-only)
+  - `POST /:id/cover/upload-intent` — obtain presigned POST fields (owner-only)
+  - `POST /:id/cover/finalize` — promote pending cover to canonical key (owner-only)
+- **Cover image flow** follows ADR-0009 (presigned POST + finalize). Key scheme:
+  `clubs/{clubId}/cover/pending/{uploadId}` (pending) → `clubs/{clubId}/cover/{uploadId}.{ext}` (finalized)
+- **Events:** Event emission (`ClubCreated`, `MemberJoined`, `ClubDeleted`) is **deferred** to the follow-up task alongside the first consumer (Discussions). The transactional-create seam is reserved with a `TODO(events)` comment in `club.service.ts`.
+- **Test-support:** `module/clubs/__test-support__/` exposes `createClub`, `createMembership`, `CLUBS_SCHEMA`, `CLUBS_TABLES`, `CLUBS_TEST_ENTITIES`, `ensureClubsSchema()`, `truncateClubs()` (via `@module/clubs/test-support` alias — spec-only).
+- **Path alias:** `@module/clubs` → `src/module/clubs/index.ts`
+
 ## Architecture Docs
 
 Key documents in `docs/` that define project constraints:
@@ -240,5 +259,5 @@ See `apps/api/.env.example` for the full list. Key groups:
 - **Database:** `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `DB_SYNCHRONIZE`, `DB_LOGGING`
 - **Identity:** `JWT_SECRET`, `JWT_EXPIRES_IN`
 - **Mail:** `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `PASSWORD_RESET_URL`, `EMAIL_CHANGE_VERIFICATION_URL`
-- **Storage / S3:** `S3_REGION`, `S3_ENDPOINT` (local: LocalStack), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_AVATARS`, `S3_PUBLIC_URL_BASE`, `MAX_AVATAR_SIZE_BYTES`, `MAX_AVATAR_DIMENSION`, `AVATAR_ALLOWED_MIME`, `PRESIGNED_POST_TTL_SECONDS`
+- **Storage / S3:** `S3_REGION`, `S3_ENDPOINT` (local: LocalStack), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_AVATARS`, `S3_PUBLIC_URL_BASE`, `MAX_AVATAR_SIZE_BYTES`, `MAX_AVATAR_DIMENSION`, `AVATAR_ALLOWED_MIME`, `S3_BUCKET_CLUB_COVERS`, `MAX_CLUB_COVER_SIZE_BYTES`, `MAX_CLUB_COVER_DIMENSION`, `CLUB_COVER_ALLOWED_MIME`, `PRESIGNED_POST_TTL_SECONDS`
 - **Logging:** `LOG_LEVEL` (`error`/`warn`/`info`/`debug`/`verbose`, default `info`), `LOG_FORMAT` (`json`/`pretty`; default `pretty` in development, `json` otherwise)

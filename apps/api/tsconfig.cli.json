@@ -13,11 +13,15 @@
     "baseUrl": ".",
     "paths": {
       "@module/identity": ["src/module/identity/index.ts"],
-      "@module/shared/config": ["src/module/shared/config/index.ts"],
-      "@module/shared/mail": ["src/module/shared/mail/index.ts"],
-      "@module/shared/persistence": ["src/module/shared/persistence/index.ts"],
-      "@module/shared/storage": ["src/module/shared/storage/index.ts"],
-      "@module/shared/image": ["src/module/shared/image/index.ts"]
+      "@module/shared/auth": ["src/shared/module/auth/index.ts"],
+      "@module/shared/config": ["src/shared/module/config/index.ts"],
+      "@module/shared/mail": ["src/shared/module/mail/index.ts"],
+      "@module/shared/persistence": ["src/shared/module/persistence/index.ts"],
+      "@module/shared/storage": ["src/shared/module/storage/index.ts"],
+      "@module/shared/image": ["src/shared/image/index.ts"],
+      "@module/shared/logging": ["src/shared/module/logging/index.ts"],
+      "@module/shared/health": ["src/shared/module/health/index.ts"],
+      "@module/clubs": ["src/module/clubs/index.ts"]
     }
   },
   "include": ["src/**/*.ts"]

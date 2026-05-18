@@ -25,7 +25,9 @@
       "@module/shared/image": ["src/shared/image/index.ts"],
       "@module/shared/test-support": ["src/shared/__test-support__/index.ts"],
       "@module/shared/logging": ["src/shared/module/logging/index.ts"],
-      "@module/shared/health": ["src/shared/module/health/index.ts"]
+      "@module/shared/health": ["src/shared/module/health/index.ts"],
+      "@module/clubs": ["src/module/clubs/index.ts"],
+      "@module/clubs/test-support": ["src/module/clubs/__test-support__/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],
