@@ -43,6 +43,17 @@ export const envSchema = z.object({
     .string()
     .min(1)
     .default('image/jpeg,image/png,image/webp'),
+  S3_BUCKET_CLUB_COVERS: z.string().min(1).default('plot-twist-club-covers'),
+  MAX_CLUB_COVER_SIZE_BYTES: z.coerce.number().int().positive().default(5_242_880),
+  MAX_CLUB_COVER_DIMENSION: z.coerce.number().int().positive().default(4096),
+  CLUB_COVER_ALLOWED_MIME: z
+    .string()
+    .min(1)
+    .regex(
+      /^(image\/[a-z0-9+.-]+)(,image\/[a-z0-9+.-]+)*$/i,
+      'each MIME must start with image/',
+    )
+    .default('image/jpeg,image/png,image/webp'),
   PRESIGNED_POST_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 
   LOG_LEVEL: z

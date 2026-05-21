@@ -12,6 +12,14 @@ import type {
   IAvatarUploadIntentRequest,
   IAvatarUploadIntentResponse,
 } from './types/avatar';
+import type {
+  IClubCoverUploadIntentRequest,
+  IClubCoverUploadIntentResponse,
+  IClubResponse,
+  ICreateClubRequest,
+  IFinalizeClubCoverRequest,
+  IUpdateClubRequest,
+} from './types/club';
 
 class AuthApiError extends Error {
   readonly statusCode: number;
@@ -243,6 +251,96 @@ export function uploadToPresignedPost(
 
     xhr.send(formData);
   });
+}
+
+export async function listClubs(): Promise<IClubResponse[]> {
+  const response = await fetch('/api/clubs', {
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+
+  return handleResponse<IClubResponse[]>(response);
+}
+
+export async function getClub(id: string): Promise<IClubResponse> {
+  const response = await fetch(`/api/clubs/${id}`, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+
+  return handleResponse<IClubResponse>(response);
+}
+
+export async function createClub(dto: ICreateClubRequest): Promise<IClubResponse> {
+  const response = await fetch('/api/clubs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<IClubResponse>(response);
+}
+
+export async function updateClub(
+  id: string,
+  dto: IUpdateClubRequest
+): Promise<IClubResponse> {
+  const response = await fetch(`/api/clubs/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<IClubResponse>(response);
+}
+
+export async function deleteClub(id: string): Promise<void> {
+  const response = await fetch(`/api/clubs/${id}`, {
+    method: 'DELETE',
+    credentials: 'same-origin',
+  });
+
+  if (response.status === 204) {
+    return;
+  }
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new AuthApiError(
+      data.message || 'Could not delete club',
+      response.status
+    );
+  }
+}
+
+export async function requestClubCoverIntent(
+  id: string,
+  dto: IClubCoverUploadIntentRequest
+): Promise<IClubCoverUploadIntentResponse> {
+  const response = await fetch(`/api/clubs/${id}/cover/upload-intent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<IClubCoverUploadIntentResponse>(response);
+}
+
+export async function finalizeClubCover(
+  id: string,
+  dto: IFinalizeClubCoverRequest
+): Promise<IClubResponse> {
+  const response = await fetch(`/api/clubs/${id}/cover/finalize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+    credentials: 'same-origin',
+  });
+
+  return handleResponse<IClubResponse>(response);
 }
 
 export { AuthApiError };

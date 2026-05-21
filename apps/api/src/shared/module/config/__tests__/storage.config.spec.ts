@@ -15,6 +15,10 @@ describe('storageConfig', () => {
       MAX_AVATAR_SIZE_BYTES: '2097152',
       MAX_AVATAR_DIMENSION: '2048',
       AVATAR_ALLOWED_MIME: 'image/jpeg, image/png ,image/webp',
+      S3_BUCKET_CLUB_COVERS: 'plot-twist-club-covers',
+      MAX_CLUB_COVER_SIZE_BYTES: '5242880',
+      MAX_CLUB_COVER_DIMENSION: '4096',
+      CLUB_COVER_ALLOWED_MIME: 'image/jpeg,image/png,image/webp',
       PRESIGNED_POST_TTL_SECONDS: '300',
     }
   })
@@ -39,6 +43,14 @@ describe('storageConfig', () => {
     expect(config.maxAvatarSizeBytes).toBe(2097152)
     expect(config.maxAvatarDimension).toBe(2048)
     expect(config.avatarAllowedMime).toEqual([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ])
+    expect(config.clubCoversBucket).toBe('plot-twist-club-covers')
+    expect(config.maxClubCoverSizeBytes).toBe(5_242_880)
+    expect(config.maxClubCoverDimension).toBe(4096)
+    expect(config.clubCoverAllowedMime).toEqual([
       'image/jpeg',
       'image/png',
       'image/webp',

@@ -12,6 +12,10 @@ export interface IStorageConfig {
   readonly maxAvatarSizeBytes: number
   readonly maxAvatarDimension: number
   readonly avatarAllowedMime: ReadonlyArray<string>
+  readonly clubCoversBucket: string
+  readonly maxClubCoverSizeBytes: number
+  readonly maxClubCoverDimension: number
+  readonly clubCoverAllowedMime: ReadonlyArray<string>
   readonly presignedPostTtlSeconds: number
 }
 
@@ -31,6 +35,15 @@ export const storageConfig = registerAs(STORAGE_CONFIG_KEY, (): IStorageConfig =
     maxAvatarDimension: Number(process.env.MAX_AVATAR_DIMENSION),
     avatarAllowedMime: Object.freeze(
       (process.env.AVATAR_ALLOWED_MIME as string)
+        .split(',')
+        .map((m) => m.trim())
+        .filter((m) => m.length > 0),
+    ),
+    clubCoversBucket: process.env.S3_BUCKET_CLUB_COVERS as string,
+    maxClubCoverSizeBytes: Number(process.env.MAX_CLUB_COVER_SIZE_BYTES),
+    maxClubCoverDimension: Number(process.env.MAX_CLUB_COVER_DIMENSION),
+    clubCoverAllowedMime: Object.freeze(
+      (process.env.CLUB_COVER_ALLOWED_MIME as string)
         .split(',')
         .map((m) => m.trim())
         .filter((m) => m.length > 0),
