@@ -4,6 +4,7 @@ export class IdentityInit1776902370578 implements MigrationInterface {
   name = "IdentityInit1776902370578";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS "identity"`);
     await queryRunner.query(
       `CREATE TYPE "identity"."user_status_enum" AS ENUM('active', 'inactive', 'suspended')`
     );
@@ -19,5 +20,6 @@ export class IdentityInit1776902370578 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "identity"."password_reset_token"`);
     await queryRunner.query(`DROP TABLE "identity"."user"`);
     await queryRunner.query(`DROP TYPE "identity"."user_status_enum"`);
+    await queryRunner.query(`DROP SCHEMA IF EXISTS "identity"`);
   }
 }
