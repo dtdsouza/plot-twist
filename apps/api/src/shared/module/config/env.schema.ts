@@ -60,4 +60,10 @@ export const envSchema = z.object({
     .enum(['error', 'warn', 'info', 'debug', 'verbose'])
     .default('info'),
   LOG_FORMAT: z.enum(['json', 'pretty']).optional(),
+
+  CLUB_INVITE_URL: z
+    .string()
+    .url()
+    .default('http://localhost:4200/clubs/join'),
+  CLUB_INVITE_EXPIRY_DAYS: z.coerce.number().int().positive().default(14),
 })

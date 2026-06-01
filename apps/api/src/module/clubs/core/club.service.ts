@@ -113,4 +113,24 @@ export class ClubService {
 
     await this.clubRepository.delete(clubId)
   }
+
+  // D6: Member self-service leave. Owner is explicitly blocked.
+  async leave(clubId: string, userId: string): Promise<void> {
+    const role = await this.membershipRepository.findRoleForUser(clubId, userId)
+
+    if (role === null) {
+      throw new NotFoundException('Club not found')
+    }
+
+    if (role === EMembershipRole.OWNER) {
+      throw new ForbiddenException(
+        'Owner cannot leave the club; delete it or transfer ownership',
+      )
+    }
+
+    await this.membershipRepository.removeMembership(clubId, userId)
+
+    // TODO(events): emit MemberLeft { clubId, userId, occurredAt: new Date() }
+    // Deferred per design.md D6 + Non-Goals; will land alongside the first consumer (Discussions).
+  }
 }

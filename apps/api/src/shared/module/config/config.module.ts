@@ -3,6 +3,7 @@ import { ConfigModule as NestConfigModule } from "@nestjs/config";
 import { envSchema } from "./env.schema";
 import {
   appConfig,
+  clubsConfig,
   databaseConfig,
   jwtConfig,
   loggingConfig,
@@ -31,7 +32,7 @@ export class ConfigModule {
 
             return result.data;
           },
-          load: [appConfig, databaseConfig, jwtConfig, loggingConfig, mailConfig, storageConfig],
+          load: [appConfig, clubsConfig, databaseConfig, jwtConfig, loggingConfig, mailConfig, storageConfig],
         }),
       ],
     };

@@ -36,6 +36,7 @@ describe('ClubService', () => {
   let mockMembershipRepository: {
     existsOwnership: jest.Mock
     findRoleForUser: jest.Mock
+    removeMembership: jest.Mock
   }
   let mockDataSource: {
     transaction: jest.Mock
@@ -52,6 +53,7 @@ describe('ClubService', () => {
     mockMembershipRepository = {
       existsOwnership: jest.fn(),
       findRoleForUser: jest.fn(),
+      removeMembership: jest.fn(),
     }
 
     mockDataSource = {
@@ -282,6 +284,38 @@ describe('ClubService', () => {
       await expect(service.deleteAsOwner(CLUB_ID, OWNER_ID)).rejects.toThrow(
         NotFoundException,
       )
+    })
+  })
+
+  describe('leave', () => {
+    it('resolves and calls removeMembership for a regular member', async () => {
+      // Arrange
+      mockMembershipRepository.findRoleForUser.mockResolvedValue(EMembershipRole.MEMBER)
+      mockMembershipRepository.removeMembership.mockResolvedValue(undefined)
+
+      // Act
+      await service.leave(CLUB_ID, MEMBER_ID)
+
+      // Assert
+      expect(mockMembershipRepository.removeMembership).toHaveBeenCalledWith(CLUB_ID, MEMBER_ID)
+    })
+
+    it('throws ForbiddenException when the owner tries to leave', async () => {
+      // Arrange
+      mockMembershipRepository.findRoleForUser.mockResolvedValue(EMembershipRole.OWNER)
+
+      // Act & Assert
+      await expect(service.leave(CLUB_ID, OWNER_ID)).rejects.toThrow(ForbiddenException)
+      expect(mockMembershipRepository.removeMembership).not.toHaveBeenCalled()
+    })
+
+    it('throws NotFoundException when user is not a member (role is null)', async () => {
+      // Arrange
+      mockMembershipRepository.findRoleForUser.mockResolvedValue(null)
+
+      // Act & Assert
+      await expect(service.leave(CLUB_ID, MEMBER_ID)).rejects.toThrow(NotFoundException)
+      expect(mockMembershipRepository.removeMembership).not.toHaveBeenCalled()
     })
   })
 })
