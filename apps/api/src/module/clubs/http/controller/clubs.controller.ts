@@ -75,6 +75,15 @@ export class ClubsController {
     await this.clubService.deleteAsOwner(id, current.sub)
   }
 
+  @Post(':id/leave')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async leave(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() current: IJwtPayload,
+  ): Promise<void> {
+    await this.clubService.leave(id, current.sub)
+  }
+
   @Post(':id/cover/upload-intent')
   @HttpCode(HttpStatus.OK)
   async initiateCover(

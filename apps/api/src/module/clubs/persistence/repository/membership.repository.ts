@@ -35,4 +35,21 @@ export class MembershipRepository extends BaseRepository<MembershipEntity> {
     const rows = await this.repository.find({ where: { userId } })
     return rows.map((r) => ({ clubId: r.clubId, role: r.role }))
   }
+
+  async createMemberMembership(clubId: string, userId: string): Promise<MembershipEntity> {
+    return this.create({
+      clubId,
+      userId,
+      role: EMembershipRole.MEMBER,
+      joinedAt: new Date(),
+    })
+  }
+
+  async removeMembership(clubId: string, userId: string): Promise<void> {
+    await this.repository.delete({ clubId, userId })
+  }
+
+  async countByClub(clubId: string): Promise<number> {
+    return this.repository.count({ where: { clubId } })
+  }
 }

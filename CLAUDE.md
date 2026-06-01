@@ -166,8 +166,8 @@ DB-touching tests seed rows via factories, not through production services or re
 ## Clubs Module (implemented)
 
 - **Schema:** `clubs` (PostgreSQL schema)
-- **Tables:** `club`, `membership`; **Enum:** `membership_role` (`owner`, `member`)
-- **Entities:** `@Entity({ schema: 'clubs', name: 'club' })` and `@Entity({ schema: 'clubs', name: 'membership' })`
+- **Tables:** `club`, `membership`, `club_invite`; **Enum:** `membership_role` (`owner`, `member`)
+- **Entities:** `@Entity({ schema: 'clubs', name: 'club' })`, `@Entity({ schema: 'clubs', name: 'membership' })`, and `@Entity({ schema: 'clubs', name: 'club_invite' })`
 - **Endpoints** under `/api/clubs`:
   - `POST /` — create club (authenticated; creator becomes owner via membership row)
   - `GET /` — list clubs for authenticated user (their memberships)
@@ -176,10 +176,17 @@ DB-touching tests seed rows via factories, not through production services or re
   - `DELETE /:id` — delete club (owner-only)
   - `POST /:id/cover/upload-intent` — obtain presigned POST fields (owner-only)
   - `POST /:id/cover/finalize` — promote pending cover to canonical key (owner-only)
+  - `GET /:id/invite` — get (or lazily create) the active invite link (owner-only)
+  - `POST /:id/invite/rotate` — revoke and re-issue the invite token (owner-only)
+  - `DELETE /:id/invite` — revoke the active invite link (owner-only)
+  - `POST /:id/invite/email` — email the invite link to up to 20 addresses (owner-only; 202 Accepted)
+  - `POST /:id/leave` — member removes their own membership; owner is blocked (204 No Content)
+  - `GET /join/:token` — public invite preview; returns `{ clubId, name, coverImageUrl, memberCount }` (no auth required; 410 Gone if expired/revoked)
+  - `POST /join/:token` — authenticated user joins the club via invite token; idempotent (200 with club; 410 if invalid)
 - **Cover image flow** follows ADR-0009 (presigned POST + finalize). Key scheme:
   `clubs/{clubId}/cover/pending/{uploadId}` (pending) → `clubs/{clubId}/cover/{uploadId}.{ext}` (finalized)
-- **Events:** Event emission (`ClubCreated`, `MemberJoined`, `ClubDeleted`) is **deferred** to the follow-up task alongside the first consumer (Discussions). The transactional-create seam is reserved with a `TODO(events)` comment in `club.service.ts`.
-- **Test-support:** `module/clubs/__test-support__/` exposes `createClub`, `createMembership`, `CLUBS_SCHEMA`, `CLUBS_TABLES`, `CLUBS_TEST_ENTITIES`, `ensureClubsSchema()`, `truncateClubs()` (via `@module/clubs/test-support` alias — spec-only).
+- **Events:** Event emission (`ClubCreated`, `MemberJoined`, `ClubDeleted`, `MemberLeft`) is **deferred**. Seams are reserved with `TODO(events)` comments in the service layer.
+- **Test-support:** `module/clubs/__test-support__/` exposes `createClub`, `createMembership`, `createClubInvite`, `CLUBS_SCHEMA`, `CLUBS_TABLES`, `CLUBS_TEST_ENTITIES`, `ensureClubsSchema()`, `truncateClubs()` (via `@module/clubs/test-support` alias — spec-only).
 - **Path alias:** `@module/clubs` → `src/module/clubs/index.ts`
 
 ## Architecture Docs
@@ -260,4 +267,5 @@ See `apps/api/.env.example` for the full list. Key groups:
 - **Identity:** `JWT_SECRET`, `JWT_EXPIRES_IN`
 - **Mail:** `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `PASSWORD_RESET_URL`, `EMAIL_CHANGE_VERIFICATION_URL`
 - **Storage / S3:** `S3_REGION`, `S3_ENDPOINT` (local: LocalStack), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_AVATARS`, `S3_PUBLIC_URL_BASE`, `MAX_AVATAR_SIZE_BYTES`, `MAX_AVATAR_DIMENSION`, `AVATAR_ALLOWED_MIME`, `S3_BUCKET_CLUB_COVERS`, `MAX_CLUB_COVER_SIZE_BYTES`, `MAX_CLUB_COVER_DIMENSION`, `CLUB_COVER_ALLOWED_MIME`, `PRESIGNED_POST_TTL_SECONDS`
+- **Clubs:** `CLUB_INVITE_URL` (base URL for invite links; token appended as `/{token}`, default `http://localhost:4200/clubs/join`), `CLUB_INVITE_EXPIRY_DAYS` (positive int, default `14`)
 - **Logging:** `LOG_LEVEL` (`error`/`warn`/`info`/`debug`/`verbose`, default `info`), `LOG_FORMAT` (`json`/`pretty`; default `pretty` in development, `json` otherwise)
